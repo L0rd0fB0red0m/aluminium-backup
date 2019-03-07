@@ -1,0 +1,102 @@
+.menu_bar {
+  overflow: hidden;
+  background: url("aluminium.jpg") no-repeat;
+  background-size: 100%;
+  position: fixed;
+  top: 0;
+  right: 0;
+  vertical-align: middle;
+  width: 100%;
+  max-height: 20%;
+  border-radius: 0px 0px 5px 5px;
+}
+
+.title {
+  float: left;
+  display: block;
+  color: #ffffff;
+  padding: 8px 0;
+  font-weight: bold;
+  font-size: 150%;
+  text-shadow: 0 0 1px black;
+}
+.logo{
+  float: left;
+  display: block;
+  height: 100%;
+}
+.logo img {
+  height: 80%;
+  max-width: 30px;
+  margin: 20% 8px;
+
+}
+
+.menu_bar a,.footer a {
+  float: right;
+  display: block;
+  color: #ffffff;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  border-radius: 5px 5px 5px 5px;
+  text-shadow: 0 0 1px black;
+}
+
+.menu_bar a:hover,.footer a:hover {
+  background: #ddd;
+  color: black;
+}
+
+.main {
+  width: 60%;
+  margin: auto;
+  margin-top: 40px;
+}
+
+
+.footer{
+  overflow: hidden;
+  background-color: #595959;
+  margin-top: 10px;
+  bottom: 0;
+  transform:scale(0.6,0.6);
+  border-radius: 5px 5px 5px 5px;
+  background: url("aluminium.jpg") no-repeat;
+  background-size: 100%;
+
+}
+
+.main h1{
+  text-align: center;
+  color: white;
+  text-shadow: 0 0 2px black;
+
+}
+.main h1 span{
+  background-image: url(aluminium.jpg);
+  border-radius: 5px 5px 5px 5px;
+
+}
+.main h2{
+  color:  #595959;
+  border-bottom: 3px solid #595959;
+}
+
+.main h3{
+  color:  #595959;
+}
+
+.main a{
+  font-weight: bold;
+  color: #595959;
+
+}
+.main ul{
+  width: 50%;
+  
+  border-left: 5px solid #595959;
+  background-color: #f1f1f1;
+  list-style-type: none;
+  padding: 10px 20px;
+}
