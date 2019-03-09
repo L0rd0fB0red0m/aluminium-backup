@@ -3,7 +3,8 @@
 <html>
 
 <?php
-  $DB = mysqli_connect("localhost","u155424db1","***REMOVED***","u155424db1");
+
+  $DB = mysqli_connect("","u155424db1","","u155424db1");
   //Connects to DB whith given Uname PW, and destination
 
   function load_possible_dests($DB){
@@ -22,11 +23,21 @@
   function load_content($destination,$DB){
     //fetches site content from DB for a given destination
     $query = mysqli_query($DB,"SELECT * FROM ws_content WHERE name = '$destination'");
+
     $page_content = mysqli_fetch_assoc($query)["content"];
-    $query = mysqli_query($DB,"SELECT * FROM ws_content WHERE name = '$destination'");
+    mysqli_data_seek ($query, 0);
     $page_title = mysqli_fetch_assoc($query)["title"];
-    $page_all = array($page_title,$page_content);
-    //queries content and title from db and combines them to one array. calls query twice bc. fetch_assoc apparently empties $query
+    mysqli_data_seek ($query, 0);
+    $sidebar_right = mysqli_fetch_assoc($query)["sidebar_right"];
+    mysqli_data_seek ($query, 0);
+    $sidebar_left = mysqli_fetch_assoc($query)["sidebar_left"];
+    $page_all = array(
+      "page_title" => $page_title,
+      "page_content" => $page_content,
+      "sidebar_left" => $sidebar_left,
+      "sidebar_right" => $sidebar_right,
+    );
+    //queries content and title from db and combines them to one array.
     return $page_all;
   };
 
@@ -52,7 +63,7 @@
   <meta charset="utf-8">
   <link rel="stylesheet" type="text/css" href="index.css">
   <title>
-    Aluminium Backup - <?php echo $page_all[0];
+    Aluminium Backup - <?php echo $page_all["page_title"];
     //sets page title to the fetched one
     ?>
   </title>
@@ -71,11 +82,26 @@
     <!--inverse order because shown from right through CSS-->
   </div><br/>
   <div class="main">
+    <div class="sidebar_left">
       <?php
-        echo utf8_decode($page_all[1]);
+        echo utf8_decode($page_all["sidebar_left"]);
         //sets page content to the fetched one
       ?>
-  </div><br/>
+    </div>
+    <div class="website_content">
+        <?php
+          echo utf8_decode($page_all["page_content"]);
+          //sets page content to the fetched one
+        ?>
+
+    </div>
+    <div class="sidebar_right">
+      <?php
+        echo utf8_decode($page_all["sidebar_right"]);
+        //sets page content to the fetched one
+      ?>
+    </div>
+  </div>
   <div class="footer">
     <div class=logo><img src="icon.ico" alt="logo"></div>
     <div class=title>Aluminium Backup</div>
