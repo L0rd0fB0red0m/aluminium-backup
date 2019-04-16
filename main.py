@@ -40,7 +40,7 @@ class main_window(QMainWindow):
         super().__init__()
         self.resize(500,500)
         self.setWindowIcon(QIcon('icon.ico'))
-        self.setWindowTitle("Aluminium Backup - "+config["default_window"]) #sets the title depending on whether B or R is displayed
+        self.setWindowTitle("Aluminium Backup - " + config["default_window"]) #sets the title depending on whether B or R is displayed
         self.menu_bar = self.menuBar()
         self.menu_bar.setStyleSheet("""
         *{background-image: url("aluminium.jpg");}""")
@@ -78,7 +78,7 @@ class main_window(QMainWindow):
         """launches Browser when Menubutton "Help" clicked"""
         #test = webbrowser.open("https://github.com/L0rd0fB0red0m/aluminium_backup", new=0, autoraise=True)
         #os.system("xdg-open https://github.com/L0rd0fB0red0m/aluminium_backup")
-        subprocess.Popen(['xdg-open', "https://github.com/L0rd0fB0red0m/aluminium_backup/blob/master/README.md"])
+        subprocess.Popen(['xdg-open', "https://github.com/L0rd0fB0red0m/aluminium-backup/blob/master/README.md"])
 
 
     def switch_b_r(self,switch_to):
@@ -130,7 +130,7 @@ def create_main_window(global_config):
 def load_config():
     """reads the config. file and saves entries as dict"""
     try:
-        with open('.config.json', 'r') as f:
+        with open('.config.ALB', 'r') as f:
             config = json.load(f)
     except:
         print("Config not loaded, using default")

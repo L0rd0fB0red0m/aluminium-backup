@@ -1,12 +1,10 @@
-from threading import Thread
-import subprocess
-import json
-import zipfile
-import shutil
-import os
-import lzma
-import pyAesCrypt
-import psutil
+from threading import Thread                                                    #for multithreaded copying
+import json                                                                     #for parsing and writing used config for restore_config
+import zipfile                                                                  #for compression
+import shutil                                                                   #for copying
+import os                                                                       #for creating directories
+import pyAesCrypt                                                               #for encryption
+import psutil                                                                   #for os-related things (eg. number of threads)
 
 
 
@@ -25,7 +23,7 @@ class activity():
 
 
         self.apply_config()
-
+        self.progress = 0
         self.copied_files = []
         self.max_progress = len(self.backup_src)
         self.pause = False
@@ -40,6 +38,7 @@ class activity():
                 working_file = self.backup_src[0]
                 del self.backup_src[0]
                 self.copy_single(working_file)
+                self.update_progress(working_file)
 
     def compress_2(self):
         """Simple zip compression"""
@@ -48,6 +47,7 @@ class activity():
                 working_file = self.backup_src[0]
                 del self.backup_src[0]
                 self.compress_single(working_file,0)
+                self.update_progress(working_file)
 
     def compress_3(self):
         """lzma compression: slow + most effective"""
@@ -56,6 +56,7 @@ class activity():
                 working_file = self.backup_src[0]
                 del self.backup_src[0]
                 self.compress_single(working_file,1)
+                self.update_progress(working_file)
 
     def compress_single(self,src,format):
         """"""
@@ -96,8 +97,8 @@ class activity():
 
     def transfer_files(self):
         """"""
-        cores = psutil.cpu_count() - 1
-        print(cores)
+        cores = (psutil.cpu_count())*4
+        #4 software threads per hardware thread (I read somewhere that a modern CPU should handle  16)
         self.running = True
         if self.configuration["compression_method"] == 3:
             for work_threads in range(cores):
@@ -125,7 +126,13 @@ class activity():
             self.backup_src = [x for x in self.backup_src if "/." not in x]                   #removes entries with .filename
         self.encrypt_files = self.configuration["encrypt_files"]
         self.encryption_password = self.configuration["encryption_password"]
-
+        if self.configuration["file_list_generator"] != "":
+            try:
+                exec(open(self.configuration["file_list_generator"]).read())
+                self.backup_src.append(generated_list)
+            except:
+                print("Did not execute user code")
+                
     def write_config(self):
         config_to_write = {
             "input_size" : self.configuration["input_size"],
@@ -135,3 +142,7 @@ class activity():
         with open(self.backup_dest+"AlB_config.json","w") as f:
             json.dump(config_to_write,f)
         f.close()
+
+    def update_progress(self,copied_file):
+        self.progress += 1
+        self.copied_files.append(copied_file)

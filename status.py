@@ -42,15 +42,17 @@ class status_window(QWidget):
 
 
     def button_pause(self):
-        def pause_action():
-            self.activity.pause = True
+        def button_action():
+            self.activity.pause = not self.activity.pause
             print("HEY")
-            self.pause_button.setText("Resume")
-            print("Might wanna add a resume button")
-        self.pause_button = QPushButton("PAUSE")
-        self.pause_button.clicked.connect(pause_action)
-        return self.pause_button
+            if self.activity.pause:
+                self.pause_button.setText("Resume")
+            else:
+                self.pause_button = QPushButton("PAUSE")
 
+        self.pause_button = QPushButton("PAUSE")
+        self.pause_button.clicked.connect(button_action)
+        return self.pause_button
 
 
     def button_stop(self):
@@ -61,17 +63,15 @@ class status_window(QWidget):
         return self.stop_button
 
 
-
-
     def update_progress(self):
         time.sleep(1)
-        most_recent_entry = ""
+        previous_length = 0
         while self.activity.progress != self.activity.max_progress:
-            if self.activity.copied_files[-1] != most_recent_entry:
+            if len(self.activity.copied_files) != previous_length:
                 print("ADDED STH")
-                self.progress_file_list.addItem(QListWidgetItem(time.strftime("%H:%M:%S")+" - "+self.activity.copied_files[0]))#["TEST"]))#list element in here pls)
+                self.progress_file_list.addItem(QListWidgetItem(time.strftime("%H:%M:%S")+" - "+self.activity.copied_files[-1]))#["TEST"]))#list element in here pls)
                 self.progression_bar.setValue(100 * self.activity.progress / self.activity.max_progress)
-                most_recent_entry = self.activity.copied_files[-1]
+                previous_length = len(self.activity.copied_files)
 
 
     def start_activity(self,B_or_R):
@@ -81,6 +81,9 @@ class status_window(QWidget):
             self.activity = BA.activity(self.config)
         else:
             self.activity = RA.activity(self.config)
+        self.UI_thread.stop()
+        self.stop_button.setText("QUIT")
+
 
 #Wanna hear a hilarious joke?
 #This code is self explanatory

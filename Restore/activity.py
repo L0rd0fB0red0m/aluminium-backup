@@ -1,13 +1,9 @@
-from threading import Thread
-import subprocess
-import json
-import zipfile
-import shutil
-import os
-import lzma
-import psutil
-import pyAesCrypt
-#test integrity? Checksum?
+from threading import Thread                                                    #for multithreaded copying
+import zipfile                                                                  #for compression
+import shutil                                                                   #for copying
+import os                                                                       #for creating directories
+import pyAesCrypt                                                               #for encryption
+import psutil                                                                   #for os-related things (eg. number of threads)
 
 
 
@@ -22,7 +18,7 @@ class activity():
         self.original_location = []
         for (dirpath,dirnames,filenames) in os.walk(self.restore_config["backup_location"]):
             for filename in filenames:
-                if filename != "AlB_config.json":
+                if filename != ".config.ALB":
                     self.original_location.append(os.path.join(dirpath,filename).replace(self.location_of_backup,""))
 
         self.copied_files = []
@@ -41,7 +37,8 @@ class activity():
 
     def transfer_files(self,compression_method):
         """creates threads and calls adequate transfer method"""
-        cores = psutil.cpu_count()- 1                                               #actual cores - 1
+        cores = (psutil.cpu_count())*4
+        #4 software threads per hardware thread (I read somewhere that a modern CPU should handle  16)
         if compression_method == 3:
             for work_threads in range(cores):
                 self.restore_threads["T_"+str(work_threads)] = Thread(target = self.decompress_3)

@@ -1,10 +1,9 @@
 .menu_bar {
-  overflow: hidden;
   background: url("aluminium.jpg") no-repeat;
   background-size: 100%;
-  position: fixed;
   top: 0;
   right: 0;
+  position: fixed;
   vertical-align: middle;
   width: 100%;
   max-height: 20%;
@@ -19,30 +18,30 @@
   font-weight: bold;
   font-size: 150%;
 }
-.logo{
-  float: left;
-  display: block;
-  height: 100%;
-}
-.logo img {
-  height: 60%;
-  max-height: 60%;
-  max-width: 25px;
-  padding: 20% 8px 20% 8px;
 
-}
-
-.menu_bar a,.footer a {
+.links {
   float: right;
-  display: block;
+  padding: 14px 16px;
+}
+
+.menu_bar a, .footer a  {
   color: #ffffff;
   text-align: center;
-  padding: 14px 16px;
   text-decoration: none;
   border-radius: 5px 5px 5px 5px;
+  font-weight: bold;
 }
 
-.menu_bar a:hover,.footer a:hover {
+.logo{
+  float: left;
+  padding: 10px 14px;
+}
+
+#logo {
+  height: 26px;
+}
+
+.menu_bar a:hover,.footer a:hover{
   background: #ddd;
   color: black;
 }
@@ -52,10 +51,8 @@
   width: 50%
 }
 
-
 .footer{
   overflow: hidden;
-  background-color: #595959;
   margin-top: 10px;
   bottom: 0;
   transform:scale(0.7,0.7);
@@ -92,7 +89,6 @@
 }
 .website_content ul{
   width: 50%;
-
   border-left: 5px solid #595959;
   background-color: #f1f1f1;
   list-style-type: none;
@@ -110,6 +106,7 @@ html{
  }
 
 .sidebar_left, .sidebar_right{
+  z-index: -1;
   position: sticky;
   top: 100px;
   height: 20%;
@@ -121,8 +118,38 @@ html{
 }
 
 .sidebar_left img, .sidebar_right img{
+  max-width: 90%;
+  max-heigt: 90%;
   display: block;
   margin-left: auto;
   margin-right: auto;
   border: 2px solid #595959;
+  border-radius: 5px 5px 5px 5px;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #595959;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 5px 5px 5px 5px;
+}
+
+.dropdown-content a{
+  margin:0 5px ;
+}
+
+.language:hover .dropdown-content {
+  display: block;
+}
+
+.language  {
+  float: right;
+  border-radius: 5px 5px 5px 5px;
+}
+
+.language a {
+  display: block;
+  padding: 14px 16px;
 }
