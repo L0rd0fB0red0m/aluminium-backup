@@ -24,7 +24,7 @@ class activity():
         self.copied_files = []
         self.max_progress = len(self.original_location)
         self.pause = False
-
+        self.unsuccesfull_log = []
         self.apply_config()
         self.transfer_files(self.restore_config["compression_method"])
 
@@ -39,10 +39,10 @@ class activity():
         """creates threads and calls adequate transfer method"""
         cores = (psutil.cpu_count())*4
         #4 software threads per hardware thread (I read somewhere that a modern CPU should handle  16)
-        if compression_method == 3:
+        if compression_method == 2:
             for work_threads in range(cores):
                 self.restore_threads["T_"+str(work_threads)] = Thread(target = self.decompress_3)
-        elif compression_method == 2:
+        elif compression_method == 1:
             for work_threads in range(cores):
                 self.restore_threads["T_"+str(work_threads)] = Thread(target = self.decompress_2)
         else:
@@ -93,21 +93,23 @@ class activity():
 
     def copy_single(self,dest):
         """"""
-        #if keep metadata:
-        #shutil.copy2(src,dest)
         dir_name, _ = os.path.split(dest)
         try:
-            if not os.path.exists(dir_name):
-                if self.create_new_dirs:
-                    os.makedirs(dir_name)
-            shutil.copy(self.location_of_backup+dest,dest)
-            if self.decrypt_files:
+            try:
+                if not os.path.exists(dir_name):
+                    if self.create_new_dirs:
+                        os.makedirs(dir_name)
+            except FileExistsError:
+                #BUG: when multiple threads try to create the same directory
+                print("Did not create dir (already exists)")
+            if self.restore_config["decrypt_files"]:
                 pyAesCrypt.decryptFile(self.location_of_backup+dest, dest[:dest.rfind(".aes")], self.restore_config["decryption_password"], 65536) #last arg is "buffersize", set to 64K
+            elif self.restore_config["keep_metadata"]:
+                shutil.copy2(self.location_of_backup+dest,dest)
             else:
                 shutil.copy(self.location_of_backup+dest,dest)
         except:
-            print("OUPSI",dest)
-            #add to log!!!!!!!!!!!!!!!!!!
+            self.unsuccesfull_log.append("/"+dest)
 
     def update_progress(self,copied_file):
         self.progress += 1
@@ -116,5 +118,4 @@ class activity():
     def apply_config(self):
         self.create_new_dirs = self.restore_config["create_new_dirs"]
         self.overwrite_existing = self.restore_config["overwrite_existing"]
-        self.decrypt_files = self.restore_config["decrypt_files"]
         self.decryption_password = self.restore_config["decryption_password"]

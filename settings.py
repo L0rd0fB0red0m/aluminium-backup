@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import *
 import json
-from crontab import CronTab 
+from crontab import CronTab
 
 class create_window(QWidget):
     def __init__(self):
@@ -10,15 +10,13 @@ class create_window(QWidget):
         self.setLayout(grid)
         grid.addWidget(QLabel("Default window:"),0,0)
         grid.addWidget(self.dd_default_window(),1,0)
-        grid.addWidget(self.cb_keep_metadata(),2,0)
+        grid.addWidget(self.cb_dark_mode(),2,0)
         grid.addWidget(self.cb_run_periodically(),3,0)
         grid.addWidget(self.dd_time_period(),4,0)
         grid.addWidget(self.button_select_config(),5,0)
         grid.addWidget(self.save_button(),6,0)
 
-    def cb_keep_metadata(self):
-        self.cb_keep_metadata = QCheckBox('Keep metadata (larger and slower)', self)
-        return self.cb_keep_metadata
+
 
     def dd_default_window(self):
         self.dd_default_window = QComboBox(self)
@@ -43,6 +41,7 @@ class create_window(QWidget):
                 self.backup_config_location = str(QFileDialog.getOpenFileName(self, "Select Script","","*.AlB"))
             except:
                 self.show_message("No file selected")
+        self.backup_config_location = ""#when not set (prevents crash)
         self.button_config_chooser = QPushButton("Select configuration file to use")
         self.button_config_chooser.clicked.connect(file_dialog)
         return self.button_config_chooser
@@ -51,12 +50,12 @@ class create_window(QWidget):
         def save_config():
             config = {
                 "default_window" : self.dd_default_window.currentText(),
-                "keep_metadata" : self.cb_keep_metadata.isChecked(),
                 "run_periodically" : self.cb_run_periodically.isChecked(),
                 "time_period" : self.dd_time_period.currentText(),
                 "config_location" : self.backup_config_location,
+                "dark_mode" : self.cb_dark_mode.isChecked()
             }
-            with open(".config.ALB","w") as f:
+            with open(".AlB/.config.AlB","w") as f:
                 json.dump(config,f)
             f.close()
             if config["run_periodically"]:
@@ -73,10 +72,13 @@ class create_window(QWidget):
         self.message_box.setStandardButtons(QMessageBox.Ok)
         self.message_box.exec()
 
+    def cb_dark_mode(self):
+        self.cb_dark_mode = QCheckBox("Use dark mode")
+        return self.cb_dark_mode
 
     def setup_cronjob(self,time_period,config_location):
         cron = CronTab()
-        job = cron.new(command="./Backup/cron_exec.py " + config_location)
+        job = cron.new(command="Backup/cron_exec.py " + config_location)
         if time_period == "Daily":
             job.day.every(1)
         elif time_period == "Weekly":

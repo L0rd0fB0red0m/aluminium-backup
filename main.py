@@ -14,10 +14,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
+
 import sys                                                                      #for quitting the programm
 import json                                                                     #for parsing and reading config. files
-import subprocess                                                               #for displaying help (not working as of now)
-import os
+import subprocess                                                               #for displaying help (does not work on every distro)
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -29,9 +29,10 @@ from Restore import ui as RUI
 #for individual UI and func. (B/R)
 
 import status
+#for the progression window
 
 from settings import create_window as create_window_settings
-#will have to change
+#for settings
 
 
 class main_window(QMainWindow):
@@ -39,11 +40,12 @@ class main_window(QMainWindow):
     def __init__(self,config):
         super().__init__()
         self.resize(500,500)
-        self.setWindowIcon(QIcon('icon.ico'))
+        if config["dark_mode"]:
+            self.setStyleSheet(open("dark.qss").read())
+        self.setWindowIcon(QIcon('.AlB/icon.ico'))
         self.setWindowTitle("Aluminium Backup - " + config["default_window"]) #sets the title depending on whether B or R is displayed
         self.menu_bar = self.menuBar()
-        self.menu_bar.setStyleSheet("""
-        *{background-image: url("aluminium.jpg");}""")
+        self.menu_bar.setStyleSheet("""*{background-image: url(".AlB/aluminium.jpg");}""")
         self.settings_button = QAction("Settings",self)
         self.menu_bar.addAction(self.settings_button)
         self.settings_button.triggered.connect(self.open_settings)
@@ -76,8 +78,6 @@ class main_window(QMainWindow):
 
     def open_help(self):
         """launches Browser when Menubutton "Help" clicked"""
-        #test = webbrowser.open("https://github.com/L0rd0fB0red0m/aluminium_backup", new=0, autoraise=True)
-        #os.system("xdg-open https://github.com/L0rd0fB0red0m/aluminium_backup")
         subprocess.Popen(['xdg-open', "https://github.com/L0rd0fB0red0m/aluminium-backup/blob/master/README.md"])
 
 
@@ -97,7 +97,6 @@ class main_window(QMainWindow):
             self.setWindowTitle("Aluminium Backup - Backup")
             self.B_or_R = True
             self.content_widgets.start_button.clicked.connect(self.start_activity)
-        print(self.content_widgets)
         self.menu_bar.addAction(self.switch_button)
         self.setCentralWidget(self.content_widgets)
 
@@ -106,7 +105,6 @@ class main_window(QMainWindow):
         def user_decision(parameter):#wut?
             if "OK" in str(parameter.text()):
                 self.close()
-                print("BYE")
                 self.dialog = status.status_window(self.B_or_R, self.ui_config)
                 self.dialog.show()
 
@@ -130,11 +128,11 @@ def create_main_window(global_config):
 def load_config():
     """reads the config. file and saves entries as dict"""
     try:
-        with open('.config.ALB', 'r') as f:
+        with open('.AlB/.config.AlB', 'r') as f:
             config = json.load(f)
     except:
         print("Config not loaded, using default")
-        config={"default_window":"Restore",
+        config={"default_window":"Restore","dark_mode":False,
         }
     return config
 

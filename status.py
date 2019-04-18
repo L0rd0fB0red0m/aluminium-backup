@@ -1,5 +1,6 @@
 from threading import Thread
 import time
+import sys
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -27,18 +28,18 @@ class status_window(QWidget):
         self.grid = QGridLayout()
         self.setLayout(self.grid)
         self.grid.addWidget(self.progress_bar(), 0, 0, 1, 2)
-        self.grid.addWidget(self.progress_list(), 1, 0, 1, 2)
-        self.grid.addWidget(self.button_pause(), 3, 0)
-        self.grid.addWidget(self.button_stop(), 3, 1)
+        self.grid.addWidget(self.now_copying(), 1, 0, 1, 2)
+        self.grid.addWidget(self.button_stop(), 2, 0)
+        self.grid.addWidget(self.button_pause(), 2, 1)
 
     def progress_bar(self):
         self.progression_bar = QProgressBar()
         self.progression_bar.setGeometry(200, 80, 250, 20)
         return self.progression_bar
 
-    def progress_list(self):
-        self.progress_file_list = QListWidget()
-        return self.progress_file_list
+    def now_copying(self):
+        self.label_now_copying = QLabel()
+        return self.label_now_copying
 
 
     def button_pause(self):
@@ -57,33 +58,43 @@ class status_window(QWidget):
 
     def button_stop(self):
         def stop_action():
-            print("HEY")
+            sys.exit()
         self.stop_button = QPushButton("STOP")
         self.stop_button.clicked.connect(stop_action)
         return self.stop_button
 
 
     def update_progress(self):
-        time.sleep(1)
         previous_length = 0
         while self.activity.progress != self.activity.max_progress:
             if len(self.activity.copied_files) != previous_length:
-                print("ADDED STH")
-                self.progress_file_list.addItem(QListWidgetItem(time.strftime("%H:%M:%S")+" - "+self.activity.copied_files[-1]))#["TEST"]))#list element in here pls)
+                #self.label_now_copying.clear()
+                #self.label_now_copying.setText("Copying  " + self.activity.copied_files[-1])
+                #results in a segfault, so I'm using:
+                print("Copying  " + self.activity.copied_files[-1],end="\r")
                 self.progression_bar.setValue(100 * self.activity.progress / self.activity.max_progress)
                 previous_length = len(self.activity.copied_files)
 
+        self.stop_button.setText("QUIT")
+        if len(self.activity.unsuccesfull_log) != 0:
+            self.show_message("Could not copy the following files:\n" + ''.join([x+"\n" for x in self.activity.unsuccesfull_log]))
 
     def start_activity(self,B_or_R):
-        self.UI_thread = Thread(target = self.update_progress)
-        self.UI_thread.start()
+        print(self.config)
+        self.update_UI = Thread(target=self.update_progress)
         if B_or_R:
             self.activity = BA.activity(self.config)
         else:
             self.activity = RA.activity(self.config)
-        self.UI_thread.stop()
-        self.stop_button.setText("QUIT")
+        self.update_UI.start()
 
 
+    def show_message(self,text_to_show):
+        self.message_box = QMessageBox()
+        self.message_box.setWindowTitle("Warning")
+        self.message_box.setIcon(QMessageBox.Information)
+        self.message_box.setText(text_to_show)
+        self.message_box.setStandardButtons(QMessageBox.Ok)
+        self.message_box.exec()
 #Wanna hear a hilarious joke?
 #This code is self explanatory

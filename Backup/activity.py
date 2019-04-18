@@ -25,6 +25,7 @@ class activity():
         self.apply_config()
         self.progress = 0
         self.copied_files = []
+        self.unsuccesfull_log = []
         self.max_progress = len(self.backup_src)
         self.pause = False
 
@@ -62,12 +63,15 @@ class activity():
         """"""
         compression_method = {"0":zipfile.ZIP_DEFLATED,"1":zipfile.ZIP_LZMA}
         file_extension = [".zip",".lzma"]
-        os.chdir(src[:src.rfind('/')+1])
-        temporary_zipfile = zipfile.ZipFile(src+file_extension[format], "w", compression_method[str(format)])
-        temporary_zipfile.write(src[src.rfind('/')+1:])
-        temporary_zipfile.close()
-        self.copy_single(src+file_extension[format])
-        os.remove(src+file_extension[format])
+        try:
+            os.chdir(src[:src.rfind('/')+1])
+            temporary_zipfile = zipfile.ZipFile(src+file_extension[format], "w", compression_method[str(format)])
+            temporary_zipfile.write(src[src.rfind('/')+1:])
+            temporary_zipfile.close()
+            self.copy_single(src+file_extension[format])
+            os.remove(src+file_extension[format])
+        except:
+            self.unsuccesfull_log.append("/"+src)
         """stories_zip = zipfile.ZipFile('C:\\Stories\\Funny\\archive.zip')
         for file in stories_zip.namelist():
             stories_zip.extract(file, 'C:\\Stories\\Short\\Funny')
@@ -76,34 +80,34 @@ class activity():
 
     def copy_single(self,src):
         """"""
-        #if keep metadata:
-        #shutil.copy2(src,dest)
         try:
             if src[0]=="/":
                 src = src[1:]
             if not os.path.exists((self.backup_dest+src)[:(self.backup_dest+src).rfind("/")]):
-                os.makedirs((self.backup_dest+src)[:(self.backup_dest+src).rfind("/")])
+                try:
+                    os.makedirs((self.backup_dest+src)[:(self.backup_dest+src).rfind("/")])
+                except FileExistsError:
+                    #BUG: when multiple threads try to create the same directory
+                    print("Did not create dir (already exists)")
 
-
-            if self.encrypt_files:
-                pyAesCrypt.encryptFile("/" + src, self.backup_dest+src+".aes", self.encryption_password, 65536) #last arg is "buffersize", set to 64K
+            if self.configuration["encrypt_files"]:
+                pyAesCrypt.encryptFile("/" + src, self.backup_dest+src+".aes", self.encryption_password, 65536) #last arg is "buffersize", set to 64Kb
+            elif self.configuration["keep_metadata"]:
+                shutil.copy2("/"+src,self.backup_dest+src)
             else:
-                shutil.copyfile("/"+src,self.backup_dest+src)#might have to rm last "/"
+                shutil.copyfile("/"+src,self.backup_dest+src)
         except:
-            print("well...",src)
-            #add to log
-
-
+            self.unsuccesfull_log.append("/"+src)
 
     def transfer_files(self):
         """"""
         cores = (psutil.cpu_count())*4
         #4 software threads per hardware thread (I read somewhere that a modern CPU should handle  16)
         self.running = True
-        if self.configuration["compression_method"] == 3:
+        if self.configuration["compression_method"] == 2:
             for work_threads in range(cores):
                 self.backup_threads["T_"+str(work_threads)] = Thread(target = self.compress_3)
-        elif self.configuration["compression_method"] == 2:
+        elif self.configuration["compression_method"] == 1:
             for work_threads in range(cores):
                 self.backup_threads["T_"+str(work_threads)] = Thread(target = self.compress_2)
         else:
@@ -124,20 +128,20 @@ class activity():
             self.backup_src = [x for x in self.backup_src if os.path.getsize(x) <= self.configuration["max_file_size"]] #only keep entries that match the specified size
         if self.configuration["ignore_hidden"]:
             self.backup_src = [x for x in self.backup_src if "/." not in x]                   #removes entries with .filename
-        self.encrypt_files = self.configuration["encrypt_files"]
         self.encryption_password = self.configuration["encryption_password"]
         if self.configuration["file_list_generator"] != "":
             try:
                 exec(open(self.configuration["file_list_generator"]).read())
-                self.backup_src.append(generated_list)
+                self.backup_src = self.backup_src + self.generated_list
             except:
                 print("Did not execute user code")
-                
+
     def write_config(self):
         config_to_write = {
             "input_size" : self.configuration["input_size"],
             "approx_output_size" :  self.configuration["approx_output_size"],
-            "compression_method" :  self.configuration["compression_method"]
+            "compression_method" :  self.configuration["compression_method"],
+            "keep_metadata" : self.configuration["keep_metadata"]
         }
         with open(self.backup_dest+"AlB_config.json","w") as f:
             json.dump(config_to_write,f)

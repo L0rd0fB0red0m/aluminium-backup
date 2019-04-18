@@ -16,7 +16,7 @@ class create_widgets(QWidget):
         #default-config:
         self.backup_config = {
             "ignore_hidden" : False,
-            "compression_method" : 1,   #no compression
+            "compression_method" : 0,   #no compression
             "ignore_different_ending" : False,
             "only_ending" : [],
             "encrypt_files" : False,
@@ -28,9 +28,9 @@ class create_widgets(QWidget):
             "approx_output_size" : 0,
             "selected_dirs" : [],
             "output_dir" : "",
-            "input_size":0,
-            "file_list_generator":""
-
+            "input_size" : 0,
+            "file_list_generator" : "",
+            "keep_metadata" : False,
 
         }
         self.backup_config["selected_dirs"] = []
@@ -44,7 +44,7 @@ class create_widgets(QWidget):
         grid = QGridLayout()
 
         #1rst row:
-        grid.addWidget(self.file_selector_label(), 0, 0, 1, 2)
+        grid.addWidget(self.file_selector_label(), 0, 0, 1, 4)
         grid.addWidget(self.file_selector(), 1, 0 , 1, 2)
         grid.addWidget(self.create_backup_file_list(), 2, 0, 4, 2)
         grid.addWidget(self.show_input_size(), 6, 0, 1, 2)
@@ -58,16 +58,19 @@ class create_widgets(QWidget):
         #regexp?
 
         #2nd row:
-        grid.addWidget(self.create_compression_info_label(), 0, 2, 1, 2)
-        grid.addWidget(self.create_compression_slider(), 1, 2, 1, 2)
-        grid.addWidget(self.create_compression_label(), 2, 2, 1, 2)
-        grid.addWidget(self.backup_location_selector(), 3, 2, 1, 2)
-        grid.addWidget(self.cb_encrypt_files(), 5, 2, 1, 2)
-        grid.addWidget(self.entry_encryption_password(), 6, 2, 1, 2)
-        grid.addWidget(self.button_select_file_list_generator(),7,2,1,2)
+        grid.addWidget(self.button_select_file_list_generator(),1,2,1,2)
+        grid.addWidget(self.create_compression_info_label(), 2, 2, 1, 2)
+        grid.addWidget(self.create_compression_slider(), 3, 2, 1, 2)
+        grid.addWidget(self.create_compression_label(), 4, 2, 1, 2)
+        grid.addWidget(self.cb_keep_metadata(), 5, 2, 1, 2)
+
+        grid.addWidget(self.cb_encrypt_files(), 6, 2, 1, 2)
+        grid.addWidget(self.entry_encryption_password(), 7, 2, 1, 2)
+
+        grid.addWidget(self.backup_location_selector(), 8, 2, 1, 2)
         grid.addWidget(self.save_profile_button(), 9, 2, 1, 1)
         grid.addWidget(self.load_profile_button(), 9, 3, 1, 1)
-        grid.addWidget(self.create_backup_button(), 10, 3)
+        grid.addWidget(self.create_backup_button(), 10, 2, 1, 2)
 
         self.setLayout(grid)
 
@@ -85,7 +88,7 @@ class create_widgets(QWidget):
     def cb_file_type(self):
         def update_config():
             self.backup_config["ignore_different_ending"] = only_file_type.isChecked()
-        only_file_type = QCheckBox("Only files with ending: ...")
+        only_file_type = QCheckBox("Only files with ending:")
         only_file_type.toggled.connect(update_config)
         return only_file_type
 
@@ -135,27 +138,28 @@ class create_widgets(QWidget):
         self.compression_slider = QSlider(Qt.Horizontal)
         self.compression_slider.setMinimum(1)
         self.compression_slider.setMaximum(3)
-        self.compression_slider.setValue(2)
+        self.compression_slider.setValue(1)
         self.compression_slider.setTickPosition(QSlider.TicksBelow)
         self.compression_slider.setTickInterval(1)
         self.compression_slider.valueChanged.connect(self.update_compression_label)
         return self.compression_slider
     def create_compression_label(self):
         self.compression_label = QLabel()
-        self.compression_method = 2
-        self.compression_label.setText(["Rapid, no compression","Slower, medium compression","Slowest, best compression"][self.compression_method-1])
+        self.compression_method = 0
+        self.compression_label.setText(["Rapid, no compression","Slower, medium compression","Slowest, best compression"][self.compression_method])
         return self.compression_label
     def update_compression_label(self):
-        self.compression_method = self.compression_slider.value()
-        self.approx_output_size = [round(self.input_size[0]*[1,0.9,0.8][self.compression_method-1],2),self.input_size[1]]
-        self.compression_label.setText(["Rapid, no compression","Slower, medium compression","Slowest, best compression"][self.compression_method-1]+"\n"+"Output size estimated at: "+str(self.approx_output_size[0])+" "+self.approx_output_size[1])
+        self.compression_method = self.compression_slider.value()-1
+        self.approx_output_size = [round(self.input_size[0]*[1,0.9,0.8][self.compression_method],2),self.input_size[1]]
+        self.compression_label.setText(["Rapid, no compression","Slower, medium compression","Slowest, best compression"][self.compression_method]+"\n"+"Output size estimated at: "+str(self.approx_output_size[0])+" "+self.approx_output_size[1])
         self.backup_config["compression_method"] = self.compression_method
         self.backup_config["approx_output_size"] = self.approx_output_size
 
     """Select actual files"""########################################################
     def file_selector_label(self):
         file_selector_label = QLabel()
-        file_selector_label.setText("Select the directories you want to be backed up")
+        file_selector_label.setText("Select the directories you want to be backed up.\n You can also select a python-snippet which generates a list of files.")
+        file_selector_label.setAlignment(Qt.AlignCenter)
         return file_selector_label
     def file_selector(self):
         file_button = QPushButton("Select directory")
@@ -223,7 +227,6 @@ class create_widgets(QWidget):
     def cb_hidden_files(self):
         def update_hidden_cfg():
             self.backup_config["ignore_hidden"] = check_hidden.isChecked()
-            print(backup_config)
         check_hidden = QCheckBox("Ignore hidden files")
         check_hidden.toggled.connect(update_hidden_cfg)
         return check_hidden
@@ -242,8 +245,7 @@ class create_widgets(QWidget):
         return self.encryption_password
     def read_password(self):
         """Does this only when button pressed, most secure way"""
-        print("No password?")
-        #read Password
+        self.backup_config["encryption_password"] = self.encryption_password.text()
 
     """START Button"""##############################################################
     def create_backup_button(self):
@@ -261,7 +263,8 @@ class create_widgets(QWidget):
     def button_select_file_list_generator(self):
         def file_dialog():
             try:
-                self.backup_config["file_list_generator"] = str(QFileDialog.getOpenFileName(self, "Select Script","","*.py"))
+                self.show_message("This script must generate a list named 'self.generated_list'.")
+                self.backup_config["file_list_generator"] = str(QFileDialog.getOpenFileName(self, "Select Script","","*.py")[0])
             except:
                 self.show_message("No file selected")
         self.generator_location_chooser = QPushButton("Select location of script")
@@ -276,6 +279,11 @@ class create_widgets(QWidget):
         self.message_box.setStandardButtons(QMessageBox.Ok)
         self.message_box.exec()
 
+    def cb_keep_metadata(self):
+        def update_cfg():
+            self.backup_config["keep_metadata"] = cb_keep_metadata.isChecked()
+        cb_keep_metadata = QCheckBox('Keep metadata (larger and slower)', self)
+        return cb_keep_metadata
 
 def get_dir_size(path_list,ignore_different_ending,specified_ending):
     total_size = 0
@@ -286,10 +294,8 @@ def get_dir_size(path_list,ignore_different_ending,specified_ending):
                 if ignore_different_ending:
                     if os.path.splitext(entry.name)[2] in specified_ending:
                         total += entry.stat().st_size
-                        print(entry.name)
                 else:
                     total += entry.stat().st_size
-                    print(entry.name)
             elif entry.is_dir():
                 total += folder_size(entry.path)
         return total
