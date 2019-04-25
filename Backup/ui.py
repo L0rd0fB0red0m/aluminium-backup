@@ -7,14 +7,14 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 #for UI elements
 
-
+#Grouping functions because they're part of the same
 class create_widgets(QWidget):
     """UI for the B-Window"""
     def __init__(self):
         super().__init__()
         self.dialogs = list()
-        #default-config:
         self.backup_config = {
+            #default values
             "ignore_hidden" : False,
             "compression_method" : 0,   #no compression
             "ignore_different_ending" : False,
@@ -55,18 +55,14 @@ class create_widgets(QWidget):
         grid.addWidget(self.dd_file_larger(), 9, 1)
         grid.addWidget(self.cb_file_smaller(), 10, 0)
         grid.addWidget(self.dd_file_smaller(), 10, 1)
-        #regexp?
-
         #2nd row:
         grid.addWidget(self.button_select_file_list_generator(),1,2,1,2)
         grid.addWidget(self.create_compression_info_label(), 2, 2, 1, 2)
         grid.addWidget(self.create_compression_slider(), 3, 2, 1, 2)
         grid.addWidget(self.create_compression_label(), 4, 2, 1, 2)
         grid.addWidget(self.cb_keep_metadata(), 5, 2, 1, 2)
-
         grid.addWidget(self.cb_encrypt_files(), 6, 2, 1, 2)
         grid.addWidget(self.entry_encryption_password(), 7, 2, 1, 2)
-
         grid.addWidget(self.backup_location_selector(), 8, 2, 1, 2)
         grid.addWidget(self.save_profile_button(), 9, 2, 1, 1)
         grid.addWidget(self.load_profile_button(), 9, 3, 1, 1)
@@ -74,8 +70,10 @@ class create_widgets(QWidget):
 
         self.setLayout(grid)
 
+
     """Select Ending"""#############################################################
     def entry_file_type(self):
+        """text-field for the endings to keep"""
         def update_config():
             self.backup_config["only_ending"] = []
             for i in file_type_entry.text().split(","):
@@ -85,21 +83,27 @@ class create_widgets(QWidget):
         file_type_entry.setPlaceholderText("<ending>,<ending>,...")
         file_type_entry.editingFinished.connect(update_config)
         return file_type_entry
+
     def cb_file_type(self):
+        """Checkbox that enables this feature"""
         def update_config():
             self.backup_config["ignore_different_ending"] = only_file_type.isChecked()
         only_file_type = QCheckBox("Only files with ending:")
         only_file_type.toggled.connect(update_config)
         return only_file_type
 
+
     """Select Size"""###############################################################
     def cb_file_larger(self):
+        """Checkbox: set a size limit or not"""
         def update_config():
             self.backup_config["set_min_file_size"] = file_larger_cb.isChecked()
         file_larger_cb = QCheckBox("Only files larger than")
         file_larger_cb.toggled.connect(update_config)
         return file_larger_cb
+
     def dd_file_larger(self):
+        """Dropdown menu: min value"""
         def update_config():
             self.backup_config["min_file_size"] = file_larger_dd.currentText()
         file_larger_dd = QComboBox(self)
@@ -112,12 +116,15 @@ class create_widgets(QWidget):
         return file_larger_dd
 
     def cb_file_smaller(self):
+        """Dropdown menu: max value"""
         def update_config():
             self.backup_config["set_max_file_size"] = file_smaller_cb.isChecked()
         file_smaller_cb = QCheckBox("Only files smaller than")
         file_smaller_cb.toggled.connect(update_config)
         return file_smaller_cb
+
     def dd_file_smaller(self):
+        """Checkbox: set a size limit or not"""
         def update_config():
             self.backup_config["max_file_size"] = file_smaller_dd.currentText()
         file_smaller_dd = QComboBox(self)
@@ -129,12 +136,16 @@ class create_widgets(QWidget):
         file_smaller_dd.currentIndexChanged.connect(update_config)
         return file_smaller_dd
 
+
     """Select compression"""########################################################
     def create_compression_info_label(self):
+        """Tells the user what the slider is for"""
         self.compression_info_label = QLabel()
         self.compression_info_label.setText("Set the compression level you want:")
         return self.compression_info_label
+
     def create_compression_slider(self):
+        """3-Step Slider 1-3: (1: No compression), (2:zip), (3:lzma)"""
         self.compression_slider = QSlider(Qt.Horizontal)
         self.compression_slider.setMinimum(1)
         self.compression_slider.setMaximum(3)
@@ -143,51 +154,65 @@ class create_widgets(QWidget):
         self.compression_slider.setTickInterval(1)
         self.compression_slider.valueChanged.connect(self.update_compression_label)
         return self.compression_slider
+
     def create_compression_label(self):
+        """shows what method is being selected depending on the slider position"""
         self.compression_label = QLabel()
         self.compression_method = 0
         self.compression_label.setText(["Rapid, no compression","Slower, medium compression","Slowest, best compression"][self.compression_method])
         return self.compression_label
+
     def update_compression_label(self):
+        """updates the label when the slider is moved"""
         self.compression_method = self.compression_slider.value()-1
         self.approx_output_size = [round(self.input_size[0]*[1,0.9,0.8][self.compression_method],2),self.input_size[1]]
         self.compression_label.setText(["Rapid, no compression","Slower, medium compression","Slowest, best compression"][self.compression_method]+"\n"+"Output size estimated at: "+str(self.approx_output_size[0])+" "+self.approx_output_size[1])
         self.backup_config["compression_method"] = self.compression_method
         self.backup_config["approx_output_size"] = self.approx_output_size
 
+
     """Select actual files"""########################################################
     def file_selector_label(self):
+        """Describes the button"""
         file_selector_label = QLabel()
         file_selector_label.setText("Select the directories you want to be backed up.\n You can also select a python-snippet which generates a list of files.")
         file_selector_label.setAlignment(Qt.AlignCenter)
         return file_selector_label
+
     def file_selector(self):
-        file_button = QPushButton("Select directory")
-        file_button.clicked.connect(self.backup_file_dialog)
+        """Opens a file dialog which lets the user select the dirs they want to back up"""
+        def backup_file_dialog():
+            def update_backup_file_list():
+                self.input_size = get_dir_size(self.backup_config["selected_dirs"],self.backup_config["ignore_different_ending"],self.backup_config["only_ending"])
+                self.input_size_label.setText("Size of files: "+str(self.input_size[0])+" "+self.input_size[1])
+                self.update_compression_label()
+                self.backup_list.addItem(QListWidgetItem(self.backup_config["selected_dirs"][-1]))
+                self.backup_config["input_size"] = self.input_size
+            directory = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+            if directory == "":
+                self.show_message("No directory selected")
+            else:
+                self.backup_config["selected_dirs"].append(directory)
+                update_backup_file_list()
+        file_button = QPushButton("Select a directory")
+        file_button.clicked.connect(backup_file_dialog)
         return file_button
-    def backup_file_dialog(self):
-        def update_backup_file_list():
-            self.input_size = get_dir_size(self.backup_config["selected_dirs"],self.backup_config["ignore_different_ending"],self.backup_config["only_ending"])
-            self.input_size_label.setText("Size of files: "+str(self.input_size[0])+" "+self.input_size[1])
-            self.update_compression_label()
-            self.backup_list.addItem(QListWidgetItem(self.backup_config["selected_dirs"][-1]))
-            self.backup_config["input_size"] = self.input_size
-        directory = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
-        if directory == "":
-            self.show_message("No directory selected")
-        else:
-            self.backup_config["selected_dirs"].append(directory)
-            update_backup_file_list()
+
     def create_backup_file_list(self):
+        """creates list with selected directories"""
         self.backup_list = QListWidget()
         return self.backup_list
+
     def show_input_size(self):
+        """Label that shows the cumulated size of the selected directories"""
         self.input_size_label = QLabel()
         self.input_size_label.setText("Size of files: "+str(self.input_size[0])+" "+self.input_size[1])
         return self.input_size_label
 
+
     """Save and load profile"""##############################################################
     def save_profile_button(self):
+        """generates the configuration and saves it as a profile"""
         def save_profile():
             self.show_message("This won't save your encryption password")
             f = open("backup_config_"+str(datetime.datetime.now().strftime("%d.%m.%y-%H:%M"))+".AlB","w+")
@@ -199,6 +224,7 @@ class create_widgets(QWidget):
         return save_profile_button
 
     def load_profile_button(self):
+        """loads a profile from a given file and applies the config"""
         def load_profile():
             try:
                 config_path = str(QFileDialog.getOpenFileName(self, "Select configuration-file","","*.AlB"))
@@ -212,55 +238,77 @@ class create_widgets(QWidget):
         load_profile_button.clicked.connect(load_profile)
         return load_profile_button
 
+
     """Select backup location (dest)"""#############################################
     def backup_location_selector(self):
+        """Select where to copy all the files to"""
         def location_dialog():
             try:
                 self.backup_config["output_dir"] = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
             except:
                 self.show_message("No directory selected")
-        self.location_button = QPushButton("Select backup location")
-        self.location_button.clicked.connect(location_dialog)
-        return self.location_button
+        location_button = QPushButton("Select backup location")
+        location_button.clicked.connect(location_dialog)
+        return location_button
+
 
     """Select if hidden files"""####################################################
     def cb_hidden_files(self):
+        """Checkbox: ignore files that start with a . or not"""
         def update_hidden_cfg():
             self.backup_config["ignore_hidden"] = check_hidden.isChecked()
         check_hidden = QCheckBox("Ignore hidden files")
         check_hidden.toggled.connect(update_hidden_cfg)
         return check_hidden
 
+
+    """Select if metadata should be kept"""########################################
+    def cb_keep_metadata(self):
+        """Checkbox: keep the metadata (timestamps, permissions) when copying or not"""
+        def update_cfg():
+            self.backup_config["keep_metadata"] = cb_keep_metadata.isChecked()
+        cb_keep_metadata = QCheckBox('Keep metadata (larger and slower)', self)
+        return cb_keep_metadata
+
+
     """Select encryption"""#########################################################
     def cb_encrypt_files(self):
+        """Checkbox: encrypt files or not"""
         def update_cfg_encrypt():
             self.backup_config["encrypt_files"] = encrypt_files.isChecked()
         encrypt_files = QCheckBox("Encrypt data")
         encrypt_files.toggled.connect(update_cfg_encrypt)
         return encrypt_files
+
     def entry_encryption_password(self):
+        """prompts for user password that is only read if the checkbox is ticked"""
         self.encryption_password = QLineEdit()
         self.encryption_password.setEchoMode(QLineEdit.Password)
         self.encryption_password.setPlaceholderText("Password")
         return self.encryption_password
+
     def read_password(self):
-        """Does this only when button pressed, most secure way"""
+        """reads the passsword and saves it to the config only when button pressed, most secure way"""
         self.backup_config["encryption_password"] = self.encryption_password.text()
 
-    """START Button"""##############################################################
+
+    """START Button"""#############################################################
     def create_backup_button(self):
-        """Hook in main"""
+        """Closes UI and launches Status which then launches activity. Hook in main"""
         self.start_button = QPushButton("Backup!")
         return self.start_button
 
+
     """Finalize config. ie. get ready for backup"""#################################
     def generate_config(self):
-        """Gets called from main"""
+        """Reads all params set by the user and returns them as a dict. Gets called from main"""
         self.read_password()
         return self.backup_config
 
+
     """Select a script that generates a list of files"""############################
     def button_select_file_list_generator(self):
+        """Select a generator-script. Tells the user about the usage"""
         def file_dialog():
             try:
                 self.show_message("This script must generate a list named 'self.generated_list'.")
@@ -271,7 +319,11 @@ class create_widgets(QWidget):
         self.generator_location_chooser.clicked.connect(file_dialog)
         return self.generator_location_chooser
 
+
+    """For Warnings and Messages"""################################################
     def show_message(self,text_to_show):
+        """displays a message_box with a customizable message
+        Args: * str-> text that will be displayed"""
         self.message_box = QMessageBox()
         self.message_box.setWindowTitle("Warning")
         self.message_box.setIcon(QMessageBox.Information)
@@ -279,15 +331,19 @@ class create_widgets(QWidget):
         self.message_box.setStandardButtons(QMessageBox.Ok)
         self.message_box.exec()
 
-    def cb_keep_metadata(self):
-        def update_cfg():
-            self.backup_config["keep_metadata"] = cb_keep_metadata.isChecked()
-        cb_keep_metadata = QCheckBox('Keep metadata (larger and slower)', self)
-        return cb_keep_metadata
+
+
+
 
 def get_dir_size(path_list,ignore_different_ending,specified_ending):
+    """gets the size of given directories
+    Args: * list-> paths of directories that have been selected
+          * bool-> True if only special endings should be considered
+          * list-> endings that won't be ignored
+    """
     total_size = 0
     def folder_size(path):
+        """returns the size in bytes of 1 dir recursively"""
         total = 0
         for entry in os.scandir(path):
             if entry.is_file():
@@ -302,6 +358,7 @@ def get_dir_size(path_list,ignore_different_ending,specified_ending):
 
     for path in path_list:
         total_size += folder_size(path)
+
     unit = "B"
     if total_size/1024>=1:
         total_size = round(total_size/1024,2)

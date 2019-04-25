@@ -1,5 +1,5 @@
 from threading import Thread                                                    #for multithreaded copying
-import zipfile                                                                  #for compression
+import zipfile                                                                   #for compression
 import shutil                                                                   #for copying
 import os                                                                       #for creating directories
 import pyAesCrypt                                                               #for encryption
@@ -20,13 +20,21 @@ class activity():
             for filename in filenames:
                 if filename != ".config.ALB":
                     self.original_location.append(os.path.join(dirpath,filename).replace(self.location_of_backup,""))
-
+                    #removes the prefix of the backup folder
         self.copied_files = []
         self.max_progress = len(self.original_location)
         self.pause = False
         self.unsuccesfull_log = []
         self.apply_config()
         self.transfer_files(self.restore_config["compression_method"])
+
+
+    def apply_config(self):
+        """Appies the params selected by the user via UI"""
+        self.create_new_dirs = self.restore_config["create_new_dirs"]
+        self.overwrite_existing = self.restore_config["overwrite_existing"]
+        self.decryption_password = self.restore_config["decryption_password"]
+
 
     def decrypt_file(self):
         """decrypts previously encrypted files"""
@@ -68,7 +76,7 @@ class activity():
             if not self.pause:
                 working_file = self.location_of_backup + self.original_location[0]
                 del self.original_location[0]
-                self.decompress_single(working_file,0)
+                self.decompress_single(working_file)
                 self.update_progress(working_file)
 
 
@@ -78,21 +86,25 @@ class activity():
             if not self.pause:
                 working_file = self.location_of_backup + self.original_location[0]
                 del self.original_location[0]
-                self.decompress_single(working_file,1)
+                self.decompress_single(working_file)
                 self.update_progress(working_file)
 
 
-    def decompress_single(self,src,format):
-        """"""
-        os.chdir(src[:src.rfind('/')+1])                                    #moves to the folder the file is in
+    def decompress_single(self,src):
+        """Extracts one single file back to its original location
+        Args: * str-> original location"""
+        os.chdir(src[:src.rfind('/')+1])
+        #moves to the folder the file is in
         temporary_zipfile = zipfile.ZipFile(src)
-        for file in temporary_zipfile.namelist():                           #might not need to iterate over list because its only 1 file to start with
+        for file in temporary_zipfile.namelist():
+            #might not need to iterate over list because its only 1 file to start with
             temporary_zipfile.extract(file,src[len(self.location_of_backup):src.rfind("/")])
         #copies back to original location
 
 
     def copy_single(self,dest):
-        """"""
+        """Copies a single file
+        Args: * str-> where the file will be restored to"""
         dir_name, _ = os.path.split(dest)
         try:
             try:
@@ -102,20 +114,23 @@ class activity():
             except FileExistsError:
                 #BUG: when multiple threads try to create the same directory
                 print("Did not create dir (already exists)")
-            if self.restore_config["decrypt_files"]:
-                pyAesCrypt.decryptFile(self.location_of_backup+dest, dest[:dest.rfind(".aes")], self.restore_config["decryption_password"], 65536) #last arg is "buffersize", set to 64K
-            elif self.restore_config["keep_metadata"]:
-                shutil.copy2(self.location_of_backup+dest,dest)
+
+            if os.path_exists("/"+dest) and self.overwrite_existing:
+                if self.restore_config["decrypt_files"]:
+                    pyAesCrypt.decryptFile(self.location_of_backup+dest, dest[:dest.rfind(".aes")], self.restore_config["decryption_password"], 65536) #last arg is "buffersize", set to 64K
+                elif self.restore_config["keep_metadata"]:
+                    shutil.copy2(self.location_of_backup+dest,dest)
+                    #/??????
+                else:
+                    shutil.copy(self.location_of_backup+dest,dest)
             else:
-                shutil.copy(self.location_of_backup+dest,dest)
+                self.unsuccesfull_log.append("/"+dest)
         except:
             self.unsuccesfull_log.append("/"+dest)
 
+
     def update_progress(self,copied_file):
+        """saves the progress as a variable which is accessed from status
+        Args: *str-> path to file that has just been copied"""
         self.progress += 1
         self.copied_files.append(copied_file)
-
-    def apply_config(self):
-        self.create_new_dirs = self.restore_config["create_new_dirs"]
-        self.overwrite_existing = self.restore_config["overwrite_existing"]
-        self.decryption_password = self.restore_config["decryption_password"]

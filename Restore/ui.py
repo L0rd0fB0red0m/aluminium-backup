@@ -33,6 +33,7 @@ class create_widgets(QWidget):
         grid.addWidget(self.entry_decryption_password(), 3, 1, 1, 1)
         grid.addWidget(self.start_restore_button(), 4, 0, 1, 2)
 
+
     """Backup location"""##############################################################
     def location_selector(self):
         """button that opens a dialog to select the location of the backup-folder"""
@@ -51,38 +52,54 @@ class create_widgets(QWidget):
         file_button.clicked.connect(restore_dir_dialog)
         return file_button
 
+
     """Checkboxes"""##############################################################
     def cb_create_new_dirs(self):
+        """Checkbox: allow the creation of new diredtories"""
         self.create_new_dirs = QCheckBox("Create new directories if necessary")
         return self.create_new_dirs
+
     def cb_overwrite_existing(self):
+        """Checkbox: allow to overwite files that already exist"""
         self.overwrite_existing = QCheckBox("Overwrite existing data (DANGER)")
         return self.overwrite_existing
-    def cb_decrypt(self):
-        self.decrypt_files = QCheckBox("Decrypt files")
-        return self.decrypt_files
+
+
     """Decryption Password"""##############################################################
     def entry_decryption_password(self):
+        """allows the user to enter a password"""
         self.decryption_password=QLineEdit()
         self.decryption_password.setEchoMode(QLineEdit.Password)
         self.decryption_password.setPlaceholderText("Decryption password")
         return self.decryption_password
 
+    def cb_decrypt(self):
+        """Decrypt previously encrypted files or not"""
+        self.decrypt_files = QCheckBox("Decrypt files")
+        return self.decrypt_files
+
+
     """START Button"""##############################################################
     def start_restore_button(self):
-        """asks for confirmation and starts restore"""
+        """Closes UI and launches Status which then launches activity. Hook in main"""
         self.start_button = QPushButton("Restore!")
         return self.start_button
 
+
     """Finalize config. ie. get ready for backup"""#################################
     def generate_config(self):
+        """reads all params and saves them as a dict. Hook in main"""
         self.restore_config["decrypt_files"] = self.decrypt_files.isChecked()
         self.restore_config["decryption_password"] = self.decryption_password.text()
         self.restore_config["overwrite_existing"]=self.overwrite_existing.isChecked()
         self.restore_config["create_new_dirs"]=self.create_new_dirs.isChecked()
         return self.restore_config
 
+
+    """For Warnings and Messages"""################################################
     def show_message(self,text_to_show):
+        """displays a message_box with a customizable message
+        Args: * str-> text that will be displayed"""
         self.message_box = QMessageBox()
         self.message_box.setWindowTitle("Warning")
         self.message_box.setIcon(QMessageBox.Information)

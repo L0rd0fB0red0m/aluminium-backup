@@ -37,11 +37,13 @@ from settings import create_window as create_window_settings
 
 class main_window(QMainWindow):
     """framework, either shows B or R + Menu bars"""
-    def __init__(self,config):
+    def __init__(self):
+        """sets dims and basic/universal params"""
         super().__init__()
-        self.resize(500,500)
+        self.resize(400,450)
+        config = self.load_config()
         if config["dark_mode"]:
-            self.setStyleSheet(open("dark.qss").read())
+            self.setStyleSheet(open(".AlB/dark.qss").read())
         self.setWindowIcon(QIcon('.AlB/icon.ico'))
         self.setWindowTitle("Aluminium Backup - " + config["default_window"]) #sets the title depending on whether B or R is displayed
         self.menu_bar = self.menuBar()
@@ -70,7 +72,6 @@ class main_window(QMainWindow):
         #sets menu-buttons + respective listeners ("hooks" in Qt)
         self.setCentralWidget(self.content_widgets)
 
-
     def open_settings(self):
         """launches setting window (new window) when Menubutton "Settings" clicked"""
         self.dialog = create_window_settings()
@@ -80,8 +81,8 @@ class main_window(QMainWindow):
         """launches Browser when Menubutton "Help" clicked"""
         subprocess.Popen(['xdg-open', "https://github.com/L0rd0fB0red0m/aluminium-backup/blob/master/README.md"])
 
-
     def switch_b_r(self,switch_to):
+        """changes UI and menu-button"""
         self.menu_bar.removeAction(self.switch_button)
         if switch_to == "Restore":
             self.switch_button = QAction("Backup",self)
@@ -100,43 +101,41 @@ class main_window(QMainWindow):
         self.menu_bar.addAction(self.switch_button)
         self.setCentralWidget(self.content_widgets)
 
-
     def start_activity(self,parameter):
+        """waits for confirmation from the user and launches the status-window which launches the copying
+        Args: QObject-> which button the user has clicked (OK or Cancel) #it's a little strange, because this arg is never passed (but it works)"""
         def user_decision(parameter):#wut?
             if "OK" in str(parameter.text()):
                 self.close()
                 self.dialog = status.status_window(self.B_or_R, self.ui_config)
                 self.dialog.show()
 
-
-        #TESTING:
         self.ui_config = self.content_widgets.generate_config()
         self.dialog = activity_confirm_window(self.ui_config["approx_output_size"])
         self.dialog.show()
         self.dialog.buttonClicked.connect(user_decision)
 
+    def load_config(self):
+        """reads the config. file and saves entries as dict"""
+        try:
+            with open('.AlB/.config.AlB', 'r') as f:
+                config = json.load(f)
+        except:
+            print("Config not loaded, using default")
+            config={
+            "default_window":"Restore",
+            "dark_mode":False,
+            }
+        return config
 
 
-def create_main_window(global_config):
+
+def create_main_window():
     """Opens the Framework window + exit listeners"""
     main_app = QApplication(sys.argv)
-    main_win = main_window(global_config)
+    main_win = main_window()
     main_win.show()
     sys.exit(main_app.exec_())
-
-
-def load_config():
-    """reads the config. file and saves entries as dict"""
-    try:
-        with open('.AlB/.config.AlB', 'r') as f:
-            config = json.load(f)
-    except:
-        print("Config not loaded, using default")
-        config={"default_window":"Restore","dark_mode":False,
-        }
-    return config
-
-
 
 
 
@@ -153,10 +152,10 @@ class activity_confirm_window(QMessageBox):
 
 
 
-################################################################################
-"""ACTUAL START"""
+"""Actual start"""#################################################################
 if __name__ == "__main__":
-    create_main_window(load_config())
+    #does not run when imported (useful for bug)
+    create_main_window()
 
-#Wanna hear a hilarious joke?
-#This code is self explanatory
+## Wanna hear a hilarious joke?
+## This code is self explanatory
