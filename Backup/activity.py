@@ -57,10 +57,13 @@ class activity():
         """No compression, just copying"""
         while len(self.backup_src)>0:
             if not self.pause:
-                working_file = self.backup_src[0]
-                del self.backup_src[0]
-                self.copy_single(working_file)
-                self.update_progress(working_file)
+                try:
+                    working_file = self.backup_src[0]
+                    del self.backup_src[0]
+                    self.copy_single(working_file)
+                    self.update_progress(working_file)
+                except:
+                    print("no more files")
 
 
     def compress_2(self):
@@ -155,7 +158,7 @@ class activity():
             "compression_method" :  self.configuration["compression_method"],
             "keep_metadata" : self.configuration["keep_metadata"]
         }
-        with open(self.backup_dest+"AlB_config.json","w") as f:
+        with open(self.backup_dest + "AlB_config.json","w") as f:
             json.dump(config_to_write,f)
         f.close()
 

@@ -81,6 +81,7 @@
   <title>
     Aluminium Backup - <?php echo $page_all["page_title"];?>
   </title>
+  <link rel="icon" type="image/aluminium.icon" href="icon.ico">
 </head>
 
 <body>
