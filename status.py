@@ -1,5 +1,4 @@
 from threading import Thread                                                    #for UI-Threading
-import datetime                                                                 #for elapsed time
 import sys                                                                      #for closing the window
 
 from PyQt5.QtWidgets import *
@@ -7,8 +6,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 #for UI elements
 
-from Restore import activity as RA
-from Backup import activity as BA
+from Restore.activity import Activity as RestoreActivity
+from Backup.activity import Activity as BackupActivity
 
 
 class status_window(QWidget):
@@ -16,6 +15,7 @@ class status_window(QWidget):
     def __init__(self,B_or_R,config):
         super().__init__()
         name = lambda B_or_R: "Backing up" if B_or_R else "Restoring"
+        self.running = True
         self.config = config
         self.resize(500,100)
         self.setWindowIcon(QIcon('icon.ico'))
@@ -83,11 +83,12 @@ class status_window(QWidget):
         self.progression_bar.setValue(100 * percentage)
         self.label_now_copying.setText("Copying: " + now_copying)
 
-    def update_elapsed(self):
-        self.elapsed_time.setText("Elapsed: "+str(datetime.datetime.now() - self.start_time))
+    def update_elapsed(self,elapsed_time):
+        self.elapsed_time.setText("Elapsed: "+elapsed_time)
 
 
     def finish_ui(self,unsuccesfull_log):
+        self.running = False
         self.stop_button.setText("QUIT")
         self.label_now_copying.setText("Finished")
         self.show_message("Could not copy the following files:\n" + ''.join([x+"\n" for x in self.activity.unsuccesfull_log]))
@@ -96,13 +97,14 @@ class status_window(QWidget):
     def start_activity(self,B_or_R):
         """starts B or R process
         Args: * bool-> True for Backup and False for Restore"""
-        self.start_time = datetime.datetime.now()
-        self.update_UI = update_UI()
-        self.update_UI.elapsed.connect(self.update_elapsed)
-        self.update_UI.update.connect(self.update_progress)
-        self.update_UI.finished.connect(self.finish_ui)
-        self.update_UI.run(B_or_R,self.config)
-
+        if B_or_R:
+            self.activity = BackupActivity()
+        else:
+            self.activity = RestoreActivity()
+        self.activity.update.connect(self.update_progress)
+        self.activity.elapsed.connect(self.update_elapsed)
+        self.activity.finished.connect(self.finish_ui)
+        self.activity.run(self.config)
 
     def show_message(self,text_to_show):
         self.message_box = QMessageBox()
@@ -111,34 +113,3 @@ class status_window(QWidget):
         self.message_box.setText(text_to_show)
         self.message_box.setStandardButtons(QMessageBox.Ok)
         self.message_box.exec()
-
-
-
-class update_UI(QThread):
-    update = pyqtSignal("PyQt_PyObject","PyQt_PyObject")
-    elapsed = pyqtSignal()
-    finished = pyqtSignal("PyQt_PyObject")
-    def __init__(self):
-        QThread.__init__(self)
-
-    def run(self,B_or_R,config):
-        print("OK")
-        update_progress = Thread(target=self.update_progress)
-        if B_or_R:
-            self.activity = BA.activity(config)
-        else:
-            self.activity = RA.activity(config)
-        update_progress.start()
-
-    def update_progress(self):
-        previous_length = 0
-        while self.activity.progress != self.activity.max_progress:
-            self.elapsed.emit()
-            if len(self.activity.copied_files) != previous_length:
-                print(str(datetime.datetime.now()), end="\r")
-                percentage = self.activity.progress / self.activity.max_progress
-                now_copying = self.activity.copied_files[-1]
-                previous_length = len(self.activity.copied_files)
-                self.update.emit(percentage, now_copying)
-
-        self.finished.emit(self.activity.unsuccesfull_log)

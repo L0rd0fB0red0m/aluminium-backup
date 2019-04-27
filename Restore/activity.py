@@ -4,13 +4,26 @@ import shutil                                                                   
 import os                                                                       #for creating directories
 import pyAesCrypt                                                               #for encryption
 import psutil                                                                   #for os-related things (eg. number of threads)
+import datetime                                                                 #for elapsed time
+
+from PyQt5.QtCore import *
 
 
+class Activity(QThread):
+    """"""
 
+    update = pyqtSignal("PyQt_PyObject","PyQt_PyObject")
+    elapsed = pyqtSignal("PyQt_PyObject")
+    finished = pyqtSignal("PyQt_PyObject")
 
-class activity():
-    def __init__(self,restore_config):
-        """inits. restore process"""
+    def __init__(self):
+        """"""
+        #super().__init__()
+        QThread.__init__(self)
+
+    def run(self,restore_config):
+        """"""
+        self.start_time = datetime.datetime.now()
         self.restore_threads = {}
         self.restore_config = restore_config
         self.progress = 0
@@ -58,6 +71,8 @@ class activity():
                 self.restore_threads["T_"+str(work_threads)] = Thread(target = self.decompress_1)
         for i in self.restore_threads:
             self.restore_threads[i].start()
+        elapsed_thread = Thread(target=self.update_elapsed)
+        elapsed_thread.start()
 
 
     def decompress_1(self):
@@ -130,7 +145,16 @@ class activity():
 
 
     def update_progress(self,copied_file):
-        """saves the progress as a variable which is accessed from status
-        Args: *str-> path to file that has just been copied"""
+        """"""
         self.progress += 1
-        self.copied_files.append(copied_file)
+        percentage = self.progress / self.max_progress
+        self.update.emit(percentage,copied_file)
+        if self.progress == self.max_progress:
+            self.finished.emit(self.unsuccesfull_log)
+
+
+    def update_elapsed(self):
+        """"""
+        while self.progress < self.max_progress:
+            if not self.pause:
+                self.elapsed.emit(str(datetime.datetime.now() - self.start_time))
