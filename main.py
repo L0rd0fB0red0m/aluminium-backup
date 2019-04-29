@@ -24,19 +24,20 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 #for UI elements
 
-from Backup import ui as BUI
-from Restore import ui as RUI
+from Backup import ui as backupUI
+from Restore import ui as restoreUI
 #for individual UI and func. (B/R)
 
-import status
+from status import showStatus as showStatus
 #for the progression window
 
-from settings import create_window as create_window_settings
+from settings import showSettings as showSettings
 #for settings
 
 
 class main_window(QMainWindow):
     """framework, either shows B or R + Menu bars"""
+
     def __init__(self):
         """sets dims and basic/universal params"""
         super().__init__()
@@ -57,14 +58,13 @@ class main_window(QMainWindow):
         if config["default_window"]=="Backup":
             self.switch_button = QAction("Restore",self)
             self.switch_button.triggered.connect(lambda: self.switch_b_r("Restore"))
-            self.content_widgets = BUI.create_widgets()
-            self.content_widgets.leaveEvent(print("HEY"))
+            self.content_widgets = backupUI.create_widgets()
             self.B_or_R = True
             self.content_widgets.start_button.clicked.connect(self.start_activity)
         else:
             self.switch_button = QAction("Backup",self)
             self.switch_button.triggered.connect(lambda: self.switch_b_r("Backup"))
-            self.content_widgets = RUI.create_widgets()
+            self.content_widgets = restoreUI.create_widgets()
             self.B_or_R = False
             self.content_widgets.start_button.clicked.connect(self.start_activity)
 
@@ -74,26 +74,27 @@ class main_window(QMainWindow):
 
     def open_settings(self):
         """launches setting window (new window) when Menubutton "Settings" clicked"""
-        self.dialog = create_window_settings()
-        self.dialog.show()
+        self.settings_window = showSettings()
+        self.settings_window.show()
 
     def open_help(self):
         """launches Browser when Menubutton "Help" clicked"""
         subprocess.Popen(['xdg-open', "https://github.com/L0rd0fB0red0m/aluminium-backup/blob/master/README.md"])
 
     def switch_b_r(self,switch_to):
-        """changes UI and menu-button"""
+        """changes UI and menu-button after a button-press
+        Args: * switch_to:str -> either Restore or Backup"""
         self.menu_bar.removeAction(self.switch_button)
         if switch_to == "Restore":
             self.switch_button = QAction("Backup",self)
-            self.content_widgets = RUI.create_widgets()
+            self.content_widgets = restoreUI.create_widgets()
             self.switch_button.triggered.connect(lambda: self.switch_b_r("Backup"))
             self.setWindowTitle("Aluminium Backup - Restore")
             self.B_or_R = False
             self.content_widgets.start_button.clicked.connect(self.start_activity)
         else:
             self.switch_button = QAction("Restore",self)
-            self.content_widgets = BUI.create_widgets()
+            self.content_widgets = backupUI.create_widgets()
             self.switch_button.triggered.connect(lambda: self.switch_b_r("Restore"))
             self.setWindowTitle("Aluminium Backup - Backup")
             self.B_or_R = True
@@ -103,11 +104,11 @@ class main_window(QMainWindow):
 
     def start_activity(self,parameter):
         """waits for confirmation from the user and launches the status-window which launches the copying
-        Args: QObject-> which button the user has clicked (OK or Cancel) #it's a little strange, because this arg is never passed (but it works)"""
-        def user_decision(parameter):#wut?
+        Args: parameter:QObject -> which button the user has clicked (OK or Cancel) #it's a little strange, because this arg is never passed (but it works)"""
+        def user_decision(parameter):
             if "OK" in str(parameter.text()):
                 self.close()
-                self.dialog = status.status_window(self.B_or_R, self.ui_config)
+                self.dialog = showStatus(self.B_or_R, self.ui_config)
                 self.dialog.show()
 
         self.ui_config = self.content_widgets.generate_config()
@@ -141,6 +142,7 @@ def create_main_window():
 
 class activity_confirm_window(QMessageBox):
     """small confirmation dialog, showing output size"""
+    
     def __init__(self,output_size):
         super().__init__()
         self.setText("APPROX. " + str(output_size[0]) + output_size[1] + " WILL BE USED")
@@ -154,7 +156,7 @@ class activity_confirm_window(QMessageBox):
 
 """Actual start"""#################################################################
 if __name__ == "__main__":
-    #does not run when imported (useful for bug)
+    #does not run when imported (useful when solving bugs)
     create_main_window()
 
 ## Wanna hear a hilarious joke?

@@ -6,18 +6,21 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 #for UI elements
 
-from Restore.activity import Activity as RestoreActivity
-from Backup.activity import Activity as BackupActivity
+from Restore.activity import Activity as restoreActivity
+from Backup.activity import Activity as backupActivity
 
 
-class status_window(QWidget):
+class showStatus(QWidget):
     """framework, either shows B or R progress"""
+
     def __init__(self,B_or_R,config):
+        """Starts window and calls for start of activity
+        Args: * B_or_R:bool -> True for Backup, false for Restore
+              * config:dict -> configuration that is loaded in UI and is passed through to activity"""
         super().__init__()
         name = lambda B_or_R: "Backing up" if B_or_R else "Restoring"
-        self.running = True
         self.config = config
-        self.resize(500,100)
+        self.setFixedSize(500,100)
         self.setWindowIcon(QIcon('icon.ico'))
         self.setWindowTitle("AlB Running - " + name(B_or_R)) #sets the title depending on whether B or R is displayed
         self.create_grid_layout()
@@ -59,18 +62,20 @@ class status_window(QWidget):
         def button_action():
             self.activity.pause = not self.activity.pause
             if self.activity.pause:
-                self.pause_button.setText("Resume")
+                pause_button.setText("Resume")
             else:
-                self.pause_button.setText("PAUSE")
+                pause_button.setText("PAUSE")
 
-        self.pause_button = QPushButton("PAUSE")
-        self.pause_button.clicked.connect(button_action)
-        return self.pause_button
+        pause_button = QPushButton("PAUSE")
+        pause_button.clicked.connect(button_action)
+        return pause_button
 
 
     def button_stop(self):
         """stops everything: exits completely"""
         def stop_action():
+            for thread in self.activity.activity_threads:
+                thread.exit()
             sys.exit(130)
             #130 is Exitcode for ctl-c, which is roughly what this is equivalent to
         self.stop_button = QPushButton("STOP")
@@ -79,37 +84,83 @@ class status_window(QWidget):
 
 
     def update_progress(self, percentage, now_copying):
-        """updates UI ie. progression bar and copied file-message. Creates QUIT button after being finished"""
+        """updates progression bar and copied file-message through a signal from activity
+        Args: * percentage:int -> ratio between copied files and all files (gives an idea of the progression)
+              * now_copying:str -> path+name of the file that is being copied"""
         self.progression_bar.setValue(100 * percentage)
         self.label_now_copying.setText("Copying: " + now_copying)
 
+
     def update_elapsed(self,elapsed_time):
+        """updates elapsed time through a signal from activity
+        Args: * elapsed_time:str-> datetime-timedelta between the launch and the emission of the signal"""
         self.elapsed_time.setText("Elapsed: "+elapsed_time)
 
 
     def finish_ui(self,unsuccesfull_log):
-        self.running = False
+        """updates the UI once activity has finished, shows error messages
+        Args: * unsuccesfull_log:list -> every file that threw a caught error during activity"""
         self.stop_button.setText("QUIT")
+        self.progression_bar.setValue(100)
         self.label_now_copying.setText("Finished")
-        self.show_message("Could not copy the following files:\n" + ''.join([x+"\n" for x in self.activity.unsuccesfull_log]))
+        if len(self.activity.unsuccesfull_log) != 0:
+            self.show_unsuccessfull(self.activity.unsuccesfull_log)
 
 
     def start_activity(self,B_or_R):
         """starts B or R process
-        Args: * bool-> True for Backup and False for Restore"""
+        Args: * B_or_R:bool -> True for Backup and False for Restore"""
         if B_or_R:
-            self.activity = BackupActivity()
+            self.activity = backupActivity()
         else:
-            self.activity = RestoreActivity()
+            self.activity = restoreActivity()
         self.activity.update.connect(self.update_progress)
         self.activity.elapsed.connect(self.update_elapsed)
         self.activity.finished.connect(self.finish_ui)
         self.activity.run(self.config)
 
+
     def show_message(self,text_to_show):
-        self.message_box = QMessageBox()
-        self.message_box.setWindowTitle("Warning")
-        self.message_box.setIcon(QMessageBox.Information)
-        self.message_box.setText(text_to_show)
-        self.message_box.setStandardButtons(QMessageBox.Ok)
-        self.message_box.exec()
+        """displays a message_box with a customizable message
+        Args: * text_to_show:str -> text that will be displayed"""
+        message_box = QMessageBox()
+        message_box.setWindowTitle("Warning")
+        message_box.setIcon(QMessageBox.Information)
+        message_box.setText(text_to_show)
+        message_box.setStandardButtons(QMessageBox.Ok)
+        message_box.exec()
+
+
+    def show_unsuccessfull(self,not_copied):
+        """launches new-window displaying logged errors
+        Args: * not_copied:list -> every file that threw a caught error during activity"""
+        self.warningbox = warningBox(not_copied)
+        self.warningbox.show()
+
+
+
+
+
+
+
+class warningBox(QWidget):
+    """Creates settings-window as a standalone entity"""
+    def __init__(self,not_copied):
+        """Sets up window
+        Args: * not_copied:list -> every file that threw a caught error during activity"""
+        super().__init__()
+        self.setWindowTitle("Warning")
+        self.unsuccesfull_log = not_copied
+        grid = QGridLayout()
+        self.setLayout(grid)
+        grid.addWidget(QLabel("Did not copy the following files:"),0,0)
+        grid.addWidget(self.not_copied_list(),1,0)
+        grid.addWidget(QLabel("Please carefully check that these aren't needed."),2,0)
+
+
+    def not_copied_list(self):
+        """QList for showing the missing files (scrollable)"""
+        unsuccesfull_list = QListWidget()
+        for i in self.unsuccesfull_log:
+            unsuccesfull_list.addItem(QListWidgetItem(i))
+        return unsuccesfull_list

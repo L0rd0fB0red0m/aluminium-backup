@@ -1,5 +1,4 @@
-import datetime
-import json
+import json                                                                     #for parsing and r/w config. files
 
 from PyQt5.QtWidgets import *
 #for UI elements
@@ -7,20 +6,22 @@ from PyQt5.QtWidgets import *
 
 class create_widgets(QWidget):
     """UI for the R-Window"""
+
     def __init__(self):
         super().__init__()
-        self.dialogs = list()
-        #default_config (set in settings?)
         self.restore_config = {
+            #default values
             "create_new_dirs" : False,
             "overwrite_existing" : False,
-            "decrypt_files":False, #needs CHECKBOX!
+            "decrypt_files":False,
             "decryption_password" : "",
             "backup_location" : "",
             "approx_output_size":0,
             "compression_method":"?"
         }
+
         self.create_grid_layout()
+
 
     def create_grid_layout(self):
         """puts every single widget into a grid, every widget must be mentionned in this func."""
@@ -34,17 +35,18 @@ class create_widgets(QWidget):
         grid.addWidget(self.start_restore_button(), 4, 0, 1, 2)
 
 
-    """Backup location"""##############################################################
+    """Backup location"""###########################################################
     def location_selector(self):
         """button that opens a dialog to select the location of the backup-folder"""
         def restore_dir_dialog():
             self.restore_config["backup_location"] = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
             try:
-                with open(self.restore_config["backup_location"]+"/AlB_config.json","r") as f:
+                with open(self.restore_config["backup_location"]+"/.backup_config.AlB","r") as f:
                     old_config = json.load(f)
                 f.close()
                 self.restore_config["compression_method"] = old_config["compression_method"]
                 self.restore_config["approx_output_size"] = old_config["input_size"]
+                self.restore_config["keep_metadata"] = old_config["keep_metadata"]
             except:
                 self.show_message("No config_file found. Backup might be corrupt")
 
@@ -53,7 +55,7 @@ class create_widgets(QWidget):
         return file_button
 
 
-    """Checkboxes"""##############################################################
+    """Checkboxes"""###############################################################
     def cb_create_new_dirs(self):
         """Checkbox: allow the creation of new diredtories"""
         self.create_new_dirs = QCheckBox("Create new directories if necessary")
@@ -65,7 +67,12 @@ class create_widgets(QWidget):
         return self.overwrite_existing
 
 
-    """Decryption Password"""##############################################################
+    """Decryption Password"""######################################################
+    def cb_decrypt(self):
+        """Decrypt previously encrypted files or not"""
+        self.decrypt_files = QCheckBox("Decrypt files")
+        return self.decrypt_files
+
     def entry_decryption_password(self):
         """allows the user to enter a password"""
         self.decryption_password=QLineEdit()
@@ -73,22 +80,17 @@ class create_widgets(QWidget):
         self.decryption_password.setPlaceholderText("Decryption password")
         return self.decryption_password
 
-    def cb_decrypt(self):
-        """Decrypt previously encrypted files or not"""
-        self.decrypt_files = QCheckBox("Decrypt files")
-        return self.decrypt_files
 
-
-    """START Button"""##############################################################
+    """START Button"""#############################################################
     def start_restore_button(self):
-        """Closes UI and launches Status which then launches activity. Hook in main"""
+        """closes UI and launches Status which then launches activity. Hook in main"""
         self.start_button = QPushButton("Restore!")
         return self.start_button
 
 
     """Finalize config. ie. get ready for backup"""#################################
     def generate_config(self):
-        """reads all params and saves them as a dict. Hook in main"""
+        """reads all params and saves them as a dict. Launched from main"""
         self.restore_config["decrypt_files"] = self.decrypt_files.isChecked()
         self.restore_config["decryption_password"] = self.decryption_password.text()
         self.restore_config["overwrite_existing"]=self.overwrite_existing.isChecked()
@@ -99,7 +101,7 @@ class create_widgets(QWidget):
     """For Warnings and Messages"""################################################
     def show_message(self,text_to_show):
         """displays a message_box with a customizable message
-        Args: * str-> text that will be displayed"""
+        Args: * text_to_show:str -> text that will be displayed"""
         self.message_box = QMessageBox()
         self.message_box.setWindowTitle("Warning")
         self.message_box.setIcon(QMessageBox.Information)
