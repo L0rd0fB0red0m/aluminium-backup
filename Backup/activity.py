@@ -6,6 +6,7 @@ import os                                                                       
 import pyAesCrypt                                                               #for encryption
 import psutil                                                                   #for os-related things (eg. number of threads)
 import datetime                                                                 #for elapsed time
+import time                                                                     #same
 
 from PyQt5.QtCore import *
 
@@ -36,7 +37,7 @@ class Activity(QThread):
             for (dirpath,dirnames,files) in os.walk(dirname):
                 self.backup_src += [os.path.join(dirpath, file) for file in files]
 
-        self.max_progress = len(self.backup_src)
+
         self.pause = False
         self.apply_config()
         self.write_config()
@@ -46,7 +47,8 @@ class Activity(QThread):
     def apply_config(self):
         """removes elements from the file-list depending on the params set by the user in UI"""
         if self.backup_config["ignore_different_ending"]:
-            self.backup_src = [x for x in self.backup_src if os.path.splittext(x)[1] in self.backup_config["only_ending"]] #only keep entries that match the specified endings
+            self.backup_src = [x for x in self.backup_src if os.path.splitext(x)[1] in self.backup_config["only_ending"]]
+            #only keep entries that match the specified endings
         if self.backup_config["set_min_file_size"]:
             self.backup_config["min_file_size"] = [1,1024,10240,102400,1048576][["1B","1KB","10KB","100KB","1MB"].index(self.backup_config["min_file_size"])]
             #OK this was a tough one: converts the human-readable sizes to their byte-equivalent. If "1KB" was set by the user the second bracket makes 2, selecting 1024 bytes ie. 1KB
@@ -55,15 +57,18 @@ class Activity(QThread):
             self.backup_config["max_file_size"] = [1,1024,10240,102400,1048576][["1B","1KB","10KB","100KB","1MB"].index(self.backup_config["max_file_size"])]
             self.backup_src = [x for x in self.backup_src if os.path.getsize(x) <= self.backup_config["max_file_size"]] #only keep entries that match the specified size
         if self.backup_config["ignore_hidden"]:
-            self.backup_src = [x for x in self.backup_src if "/." not in x]                   #removes entries with .filename
+            self.backup_src = [x for x in self.backup_src if "/." not in x]
+            #removes entries with .filename
         self.encryption_password = self.backup_config["encryption_password"]
         if self.backup_config["file_list_generator"] != "":
             try:
                 exec(open(self.backup_config["file_list_generator"]).read())
-                self.backup_src = self.backup_src + self.generated_list
+                #Kinda dangerous but not prone to "hacking" as the user executes his own code on his own machine
+                self.backup_src = self.backup_src + generated_list
             except:
                 print("Did not execute user code")
 
+        self.max_progress = len(self.backup_src)
 
     def write_config(self):
         """writes the used configuration at the root of the output directory. Used when restoring"""
@@ -81,13 +86,13 @@ class Activity(QThread):
     def transfer_files(self):
         """launches the copying threads by assigning the correct compression method"""
         cores = (psutil.cpu_count())*4
-        #4 software threads per hardware thread (I read somewhere that a modern CPU should handle  16)
+        #4 software threads per hardware thread (I read somewhere that a modern CPU should handle  16/HW thread)
         if self.backup_config["compression_method"] == 2 or self.backup_config["compression_method"] == 1:
-            for work_threads in range(cores):
-                self.activity_threads["T_"+str(work_threads)] = Thread(target = self.compress_1, args=[self.backup_config["compression_method"]])
+            for work_thread in range(cores):
+                self.activity_threads["T_"+str(work_thread)] = Thread(target = self.compress_1, args=[self.backup_config["compression_method"]])
         else:
-            for work_threads in range(cores):
-                self.activity_threads["T_"+str(work_threads)] = Thread(target = self.compress_0)
+            for work_thread in range(cores):
+                self.activity_threads["T_"+str(work_thread)] = Thread(target = self.compress_0)
         for i in self.activity_threads:
             self.activity_threads[i].start()
         elapsed_thread = Thread(target=self.update_elapsed)
@@ -98,13 +103,10 @@ class Activity(QThread):
         """No compression, just copying"""
         while len(self.backup_src)>0:
             if not self.pause:
-                try:
-                    working_file = self.backup_src[0]
-                    del self.backup_src[0]
-                    self.copy_single(working_file)
-                    self.update_progress(working_file)
-                except:
-                    print("no more files")
+                working_file = self.backup_src[0]
+                del self.backup_src[0]
+                self.copy_single(working_file)
+                self.update_progress(working_file)
 
 
     def compress_1(self, compression):
@@ -122,9 +124,11 @@ class Activity(QThread):
         """compresses a single file and passes it tot copy
         Args: * src:str -> path of file
               * format:int -> deflated format: (0:zip),(1:lzma)"""
-        compression_method = {"0":zipfile.ZIP_DEFLATED,"1":zipfile.ZIP_LZMA}
+        compression_method = [zipfile.ZIP_DEFLATED,zipfile.ZIP_LZMA]
         file_extension = [".zip",".lzma"]
         src_dir_name, file_name = os.path.split(src)
+        zipfile_name = self.backup_dest+src+file_extension[format-1]
+
         try:
             if not os.path.exists(self.backup_dest+src_dir_name):
                 try:
@@ -132,21 +136,25 @@ class Activity(QThread):
                 except FileExistsError:
                     #BUG: when multiple threads try to create the same directory
                     print("Did not create dir (already exists)")
-
-            temporary_zipfile = zipfile.ZipFile(self.backup_dest+src+file_extension[format], "w", compression_method[str(format)])
-            if self.backup_config["encrypt_files"]:
-                temporary_zipfile.setpassword(self.encryption_password)
+            temporary_zipfile = zipfile.ZipFile(zipfile_name, "w", compression_method[format-1])
             temporary_zipfile.write(src, file_name)
             temporary_zipfile.close()
+            if self.backup_config["encrypt_files"]:
+                pyAesCrypt.encryptFile(zipfile_name, zipfile_name+".aes", self.encryption_password, 16*1024)
+                os.remove(zipfile_name)
+                #must encrypt seperately
         except:
             self.unsuccesfull_log.append(src)
-
+            try:
+                os.remove(zipfile_name)
+            except:
+                pass
 
     def copy_single(self, src):
         """copies one given file respecting the params from the configuration
         Args: * src:str -> path to file"""
         src_dir_name, _ = os.path.split(src)
-        
+
         try:
             if not os.path.exists(self.backup_dest+src_dir_name):
                 try:
@@ -156,7 +164,8 @@ class Activity(QThread):
                     print("Did not create dir (already exists)")
 
             if self.backup_config["encrypt_files"]:
-                pyAesCrypt.encryptFile(src, self.backup_dest+src+".aes", self.encryption_password, 65536) #last arg is "buffersize", set to 64Kb
+                pyAesCrypt.encryptFile(src, self.backup_dest+src+".aes", self.encryption_password, 16*1024)
+                #last arg is "buffersize", set to 16K
             elif self.backup_config["keep_metadata"]:
                 shutil.copy2(src, self.backup_dest+src)
             else:
@@ -179,4 +188,5 @@ class Activity(QThread):
         """sends signal to status with time delta til start"""
         while self.progress < self.max_progress:
             if not self.pause:
-                self.elapsed.emit(str(datetime.datetime.now() - self.start_time))
+                time.sleep(1)
+                self.elapsed.emit(datetime.datetime.now())

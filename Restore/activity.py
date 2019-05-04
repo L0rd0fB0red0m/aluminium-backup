@@ -5,6 +5,7 @@ import os                                                                       
 import pyAesCrypt                                                               #for encryption
 import psutil                                                                   #for os-related things (eg. number of threads)
 import datetime                                                                 #for elapsed time
+import time                                                                     #same
 
 from PyQt5.QtCore import *
 
@@ -48,11 +49,11 @@ class Activity(QThread):
         cores = (psutil.cpu_count())*4
         #4 software threads per hardware thread (I read somewhere that a modern CPU should handle  16)
         if compression_method == 2 or compression_method == 1:
-            for work_threads in range(cores):
-                self.activity_threads["T_"+str(work_threads)] = Thread(target = self.decompress_1)
+            for work_thread in range(cores):
+                self.activity_threads["T_"+str(work_thread)] = Thread(target = self.decompress_1)
         else:
-            for work_threads in range(cores):
-                self.activity_threads["T_"+str(work_threads)] = Thread(target = self.decompress_0)
+            for work_thread in range(cores):
+                self.activity_threads["T_"+str(work_thread)] = Thread(target = self.decompress_0)
         for i in self.activity_threads:
             self.activity_threads[i].start()
         elapsed_thread = Thread(target=self.update_elapsed)
@@ -83,12 +84,20 @@ class Activity(QThread):
         """Extracts one single file back to its original location
         Args: * dest:str -> where the file will be restored to"""
         dir_name, file_name = os.path.split(dest)
+        zipfile_name = self.location_of_backup + dest
         try:
-            if self.restore_config["create_new_dirs"] or os.path_exists(dir_name) and not os.path.exists(dest) or self.restore_config["overwrite_existing"]:
-                temporary_zipfile = zipfile.ZipFile(self.location_of_backup + dest)
-                temporary_zipfile.extractall(dir_name, pwd=self.restore_config["decryption_password"])
+            if self.restore_config["decrypt_files"]:
+                self.copy_single(dest)
+                zipfile_name = os.path.splitext(dest)[0]
+                temporary_zipfile = zipfile.ZipFile(zipfile_name)
+                temporary_zipfile.extractall(dir_name)
+                os.remove(os.path.splitext(dest)[0])
             else:
-                self.unsuccesfull_log.append(dest+" (prohibited through configuration)")
+                if self.restore_config["create_new_dirs"] or os.path_exists(dir_name) and not os.path.exists(dest) or self.restore_config["overwrite_existing"]:
+                    temporary_zipfile = zipfile.ZipFile(zipfile_name)
+                    temporary_zipfile.extractall(dir_name)
+                else:
+                    self.unsuccesfull_log.append(dest+" (prohibited through configuration)")
         except:
             self.unsuccesfull_log.append(dest)
 
@@ -99,25 +108,26 @@ class Activity(QThread):
         dir_name, _ = os.path.split(dest)
         backed_up_location = self.location_of_backup + dest
 
+        #try:
         try:
-            try:
-                if not os.path.exists(dir_name) and self.restore_config["create_new_dirs"]:
-                    os.makedirs(dir_name)
-            except FileExistsError:
-                #BUG: when multiple threads try to create the same directory
-                print("Did not create dir (already exists)")
+            if not os.path.exists(dir_name) and self.restore_config["create_new_dirs"]:
+                os.makedirs(dir_name)
+        except FileExistsError:
+            #BUG: when multiple threads try to create the same directory
+            print("Did not create dir (already exists)")
 
-            if not os.path.exists(dest) or self.restore_config["overwrite_existing"]:
-                if self.restore_config["decrypt_files"]:
-                    pyAesCrypt.decryptFile(backed_up_location, dest[:dest.rfind(".aes")], self.restore_config["decryption_password"], 65536) #last arg is "buffersize", set to 64K
-                elif self.restore_config["keep_metadata"]:
-                    shutil.copy2(backed_up_location, dest)
-                else:
-                    shutil.copy(backed_up_location, dest)
+        if not os.path.exists(dest) or self.restore_config["overwrite_existing"]:
+            if self.restore_config["decrypt_files"]:
+                pyAesCrypt.decryptFile(backed_up_location, os.path.splitext(dest)[0], self.restore_config["decryption_password"], 16*1024)
+                #2nd arg: dest without ".aes" ending; last arg: "buffersize", set to 16K (i don't know what value is better: they're all equally slow)
+            elif self.restore_config["keep_metadata"]:
+                shutil.copy2(backed_up_location, dest)
             else:
-                self.unsuccesfull_log.append(dest + " (file exists)")
-        except:
-            self.unsuccesfull_log.append(dest)
+                shutil.copy(backed_up_location, dest)
+        else:
+            self.unsuccesfull_log.append(dest + " (file exists)")
+        #except:
+        #    self.unsuccesfull_log.append(dest)
 
 
     def update_progress(self,copied_file):
@@ -134,4 +144,5 @@ class Activity(QThread):
         """sends signal to status with time delta til start"""
         while self.progress < self.max_progress:
             if not self.pause:
-                self.elapsed.emit(str(datetime.datetime.now() - self.start_time))
+                time.sleep(1)
+                self.elapsed.emit(datetime.datetime.now())

@@ -2,7 +2,7 @@
 <html>
 <?php
 
-  $DB = mysqli_connect("localhost","c2_remymoll","","c2_remymoll");
+  $DB = mysqli_connect("localhost","c2_remymoll","Password not published for security reasons: my own security - Mr. Kientz would kill me","c2_remymoll");
   //Connects to DB whith given Uname PW, and destination
 
   function load_possible_dests($DB,$language){
@@ -90,20 +90,23 @@
     <div class=title>Aluminium Backup</div>
 
     <div class="language">
-    <a href="#"><?php echo $links["language"]?></a>
-    <div class="dropdown-content">
-      <a href="?lang=en">English</a>
-      <a href="?lang=de">Deutsch</a>
-      <a href="?lang=fr">Français</a>
+      <a href="#"><?php echo $links["language"]?></a>
+      <div class="dropdown-content">
+        <a href="?lang=en">English</a>
+        <a href="?lang=de">Deutsch</a>
+        <a href="?lang=fr">Français</a>
+      </div>
     </div>
-  </div>
     <a class="links" href="?dest=contact&lang=<?php echo $language;?>"><?php echo $links["contact"]?></a>
     <a class="links" href="?dest=examples&lang=<?php echo $language;?>"><?php echo $links["examples"]?></a>
     <a class="links" href="?dest=sourcecode&lang=<?php echo $language;?>"><?php echo $links["sourcecode"]?></a>
     <a class="links" href="?dest=downloads&lang=<?php echo $language;?>"><?php echo $links["downloads"]?></a>
     <a class="links" href="?dest=home&lang=<?php echo $language;?>"><?php echo $links["home"]?></a>
     <!--inverse order because shown from right through CSS-->
-  </div><br/>
+  </div>
+
+  <br/>
+
   <div class="main">
     <div class="sidebar_left">
       <?php
@@ -125,6 +128,7 @@
       ?>
     </div>
   </div>
+  
   <div class="footer">
     <a class="logo" href="#"><img id=logo src="icon.ico" alt="logo"></a>
     <div class=title>Aluminium Backup</div>

@@ -47,12 +47,12 @@ class showStatus(QWidget):
 
     def now_copying(self):
         """shows the path of the file that is being copied at the moment"""
-        self.label_now_copying = QLabel()
+        self.label_now_copying = QLabel("Starting...")
         return self.label_now_copying
 
 
     def elapsed(self):
-        """Shows time elapsed since the start"""
+        """shows time elapsed since the start"""
         self.elapsed_time = QLabel()
         return self.elapsed_time
 
@@ -74,8 +74,6 @@ class showStatus(QWidget):
     def button_stop(self):
         """stops everything: exits completely"""
         def stop_action():
-            for thread in self.activity.activity_threads:
-                thread.exit()
             sys.exit(130)
             #130 is Exitcode for ctl-c, which is roughly what this is equivalent to
         self.stop_button = QPushButton("STOP")
@@ -91,9 +89,10 @@ class showStatus(QWidget):
         self.label_now_copying.setText("Copying: " + now_copying)
 
 
-    def update_elapsed(self,elapsed_time):
+    def update_elapsed(self,time_now):
         """updates elapsed time through a signal from activity
         Args: * elapsed_time:str-> datetime-timedelta between the launch and the emission of the signal"""
+        elapsed_time = str(time_now - self.activity.start_time)[:-7]#.strftime("%H:%M:%S")
         self.elapsed_time.setText("Elapsed: "+elapsed_time)
 
 

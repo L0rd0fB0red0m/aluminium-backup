@@ -41,20 +41,28 @@ class main_window(QMainWindow):
     def __init__(self):
         """sets dims and basic/universal params"""
         super().__init__()
+        #calls QMainWindow methods
         self.resize(400,450)
         config = self.load_config()
         if config["dark_mode"]:
             self.setStyleSheet(open(".AlB/dark.qss").read())
         self.setWindowIcon(QIcon('.AlB/icon.ico'))
-        self.setWindowTitle("Aluminium Backup - " + config["default_window"]) #sets the title depending on whether B or R is displayed
+        self.setWindowTitle("Aluminium Backup - " + config["default_window"])
+        #sets the title depending on whether B or R is set as content
         self.menu_bar = self.menuBar()
         self.menu_bar.setStyleSheet("""*{background-image: url(".AlB/aluminium.jpg");}""")
-        self.settings_button = QAction("Settings",self)
-        self.menu_bar.addAction(self.settings_button)
-        self.settings_button.triggered.connect(self.open_settings)
-        self.help_button = QAction("Help",self)
-        self.menu_bar.addAction(self.help_button)
-        self.help_button.triggered.connect(self.open_help)
+        settings_button = QAction("Settings",self)
+        self.menu_bar.addAction(settings_button)
+        settings_button.triggered.connect(self.open_settings)
+        help_button = QAction("Help",self)
+        self.menu_bar.addAction(help_button)
+        help_button.triggered.connect(lambda: subprocess.Popen(['xdg-open', "https://github.com/L0rd0fB0red0m/aluminium-backup/blob/master/README.md"]))
+        info_button = QAction("Info",self)
+        self.menu_bar.addAction(info_button)
+        info_button.triggered.connect(lambda: subprocess.Popen(['xdg-open', "https://dfglfa.net/Informatique/bac2019/remy"]))
+
+
+
         if config["default_window"]=="Backup":
             self.switch_button = QAction("Restore",self)
             self.switch_button.triggered.connect(lambda: self.switch_b_r("Restore"))
@@ -69,17 +77,16 @@ class main_window(QMainWindow):
             self.content_widgets.start_button.clicked.connect(self.start_activity)
 
         self.menu_bar.addAction(self.switch_button)
-        #sets menu-buttons + respective listeners ("hooks" in Qt)
+        #sets menu-buttons + respective listeners/hooks
         self.setCentralWidget(self.content_widgets)
+        #sets the Backup/Restore - UI as only widget
+
 
     def open_settings(self):
         """launches setting window (new window) when Menubutton "Settings" clicked"""
         self.settings_window = showSettings()
         self.settings_window.show()
 
-    def open_help(self):
-        """launches Browser when Menubutton "Help" clicked"""
-        subprocess.Popen(['xdg-open', "https://github.com/L0rd0fB0red0m/aluminium-backup/blob/master/README.md"])
 
     def switch_b_r(self,switch_to):
         """changes UI and menu-button after a button-press
@@ -89,6 +96,7 @@ class main_window(QMainWindow):
             self.switch_button = QAction("Backup",self)
             self.content_widgets = restoreUI.create_widgets()
             self.switch_button.triggered.connect(lambda: self.switch_b_r("Backup"))
+            #lambda because it allows to pass an argument
             self.setWindowTitle("Aluminium Backup - Restore")
             self.B_or_R = False
             self.content_widgets.start_button.clicked.connect(self.start_activity)
@@ -102,6 +110,7 @@ class main_window(QMainWindow):
         self.menu_bar.addAction(self.switch_button)
         self.setCentralWidget(self.content_widgets)
 
+
     def start_activity(self,parameter):
         """waits for confirmation from the user and launches the status-window which launches the copying
         Args: parameter:QObject -> which button the user has clicked (OK or Cancel) #it's a little strange, because this arg is never passed (but it works)"""
@@ -112,9 +121,10 @@ class main_window(QMainWindow):
                 self.dialog.show()
 
         self.ui_config = self.content_widgets.generate_config()
-        self.dialog = activity_confirm_window(self.ui_config["approx_output_size"])
+        self.dialog = confirmWindow(self.ui_config["approx_output_size"])
         self.dialog.show()
         self.dialog.buttonClicked.connect(user_decision)
+
 
     def load_config(self):
         """reads the config. file and saves entries as dict"""
@@ -122,12 +132,12 @@ class main_window(QMainWindow):
             with open('.AlB/.config.AlB', 'r') as f:
                 config = json.load(f)
         except:
-            print("Config not loaded, using default")
             config={
-            "default_window":"Restore",
+            "default_window":"Backup",
             "dark_mode":False,
             }
         return config
+
 
 
 
@@ -140,10 +150,12 @@ def create_main_window():
 
 
 
-class activity_confirm_window(QMessageBox):
+class confirmWindow(QMessageBox):
     """small confirmation dialog, showing output size"""
-    
+
     def __init__(self,output_size):
+        """Shows a warning of the space used and gives the user the option to abort
+        Args: * output_size:list -> Human readable file size: size + unit as to separate entries"""
         super().__init__()
         self.setText("APPROX. " + str(output_size[0]) + output_size[1] + " WILL BE USED")
         self.setIcon(QMessageBox.Warning)
@@ -156,7 +168,7 @@ class activity_confirm_window(QMessageBox):
 
 """Actual start"""#################################################################
 if __name__ == "__main__":
-    #does not run when imported (useful when solving bugs)
+    #does not run when imported as a module
     create_main_window()
 
 ## Wanna hear a hilarious joke?

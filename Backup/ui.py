@@ -157,7 +157,7 @@ class create_widgets(QWidget):
                 self.backup_config["only_ending"].append(i)
                 """Sanitize Input!!!!!!!!"""
         file_type_entry = QLineEdit()
-        file_type_entry.setPlaceholderText("<ending>,<ending>,...")
+        file_type_entry.setPlaceholderText(".py,.md,.sh,...")
         file_type_entry.editingFinished.connect(update_config)
         return file_type_entry
 
@@ -251,7 +251,7 @@ class create_widgets(QWidget):
         """Select a generator-script. Tells the user about the usage"""
         def file_dialog():
             try:
-                self.show_message("This script must generate a list named 'self.generated_list'.")
+                self.show_message("This script must generate a list named 'generated_list'.")
                 self.backup_config["file_list_generator"] = str(QFileDialog.getOpenFileName(self, "Select Script","","*.py")[0])
             except:
                 self.show_message("No file selected")
@@ -277,11 +277,12 @@ class create_widgets(QWidget):
         """loads a profile from a given file and applies the config"""
         def load_profile():
             try:
-                config_path = str(QFileDialog.getOpenFileName(self, "Select configuration-file","","*.AlB"))
+                config_path = str(QFileDialog.getOpenFileName(self, "Select configuration-file","","Aluminium Backup configuration (*.AlB)")[0])
                 with open(config_path,"r") as f:
                     loaded_config = json.load(f)
                 f.close()
                 self.backup_config = loaded_config
+                self.show_message("configuration loaded, but UI won't update.")
             except:
                 self.show_message("No file selected or corrupt file")
         load_profile_button = QPushButton("Load profile")
