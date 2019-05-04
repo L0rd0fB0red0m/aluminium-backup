@@ -108,26 +108,26 @@ class Activity(QThread):
         dir_name, _ = os.path.split(dest)
         backed_up_location = self.location_of_backup + dest
 
-        #try:
         try:
-            if not os.path.exists(dir_name) and self.restore_config["create_new_dirs"]:
-                os.makedirs(dir_name)
-        except FileExistsError:
-            #BUG: when multiple threads try to create the same directory
-            print("Did not create dir (already exists)")
+            try:
+                if not os.path.exists(dir_name) and self.restore_config["create_new_dirs"]:
+                    os.makedirs(dir_name)
+            except FileExistsError:
+                #BUG: when multiple threads try to create the same directory
+                print("Did not create dir (already exists)")
 
-        if not os.path.exists(dest) or self.restore_config["overwrite_existing"]:
-            if self.restore_config["decrypt_files"]:
-                pyAesCrypt.decryptFile(backed_up_location, os.path.splitext(dest)[0], self.restore_config["decryption_password"], 16*1024)
-                #2nd arg: dest without ".aes" ending; last arg: "buffersize", set to 16K (i don't know what value is better: they're all equally slow)
-            elif self.restore_config["keep_metadata"]:
-                shutil.copy2(backed_up_location, dest)
+            if not os.path.exists(dest) or self.restore_config["overwrite_existing"]:
+                if self.restore_config["decrypt_files"]:
+                    pyAesCrypt.decryptFile(backed_up_location, os.path.splitext(dest)[0], self.restore_config["decryption_password"], 16*1024)
+                    #2nd arg: dest without ".aes" ending; last arg: "buffersize", set to 16K (i don't know what value is better: they're all equally slow)
+                elif self.restore_config["keep_metadata"]:
+                    shutil.copy2(backed_up_location, dest)
+                else:
+                    shutil.copy(backed_up_location, dest)
             else:
-                shutil.copy(backed_up_location, dest)
-        else:
-            self.unsuccesfull_log.append(dest + " (file exists)")
-        #except:
-        #    self.unsuccesfull_log.append(dest)
+                self.unsuccesfull_log.append(dest + " (file exists)")
+        except:
+            self.unsuccesfull_log.append(dest)
 
 
     def update_progress(self,copied_file):
