@@ -182,6 +182,8 @@ class Activity(QThread):
         self.update.emit(percentage,copied_file)
         if self.progress == self.max_progress:
             self.finished.emit(self.unsuccesfull_log)
+            if self.config["shutdown_when_finished"]:
+                os.system("sudo shutdown now")
 
 
     def update_elapsed(self):

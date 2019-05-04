@@ -30,6 +30,7 @@ class create_widgets(QWidget):
             "input_size" : 0,
             "file_list_generator" : "",
             "keep_metadata" : False,
+            "shutdown_when_finished": False,
         }
         self.input_size = [0,"B"]
         self.approx_output_size = [0,"B"]
@@ -44,17 +45,17 @@ class create_widgets(QWidget):
         #1rst row:
         grid.addWidget(self.file_selector_label(), 0, 0, 1, 4)
         grid.addWidget(self.file_selector(), 1, 0 , 1, 2)
-        grid.addWidget(self.create_backup_file_list(), 2, 0, 4, 2)
-        grid.addWidget(self.show_input_size(), 6, 0, 1, 2)
-        grid.addWidget(self.cb_hidden_files(), 7, 0, 1, 2)
-        grid.addWidget(self.cb_file_type(), 8, 0)
-        grid.addWidget(self.entry_file_type(), 8, 1)
-        grid.addWidget(self.cb_file_larger(), 9, 0)
-        grid.addWidget(self.dd_file_larger(), 9, 1)
-        grid.addWidget(self.cb_file_smaller(), 10, 0)
-        grid.addWidget(self.dd_file_smaller(), 10, 1)
+        grid.addWidget(self.backup_file_list(), 2, 0, 5, 2)
+        grid.addWidget(self.show_input_size(), 7, 0, 1, 2)
+        grid.addWidget(self.cb_hidden_files(), 8, 0, 1, 2)
+        grid.addWidget(self.cb_file_type(), 9, 0)
+        grid.addWidget(self.entry_file_type(), 9, 1)
+        grid.addWidget(self.cb_file_larger(), 10, 0)
+        grid.addWidget(self.dd_file_larger(), 10, 1)
+        grid.addWidget(self.cb_file_smaller(), 11, 0)
+        grid.addWidget(self.dd_file_smaller(), 11, 1)
         #2nd row:
-        grid.addWidget(self.button_select_file_list_generator(),1,2,1,2)
+        grid.addWidget(self.button_select_file_list_generator(), 1, 2, 1, 2)
         grid.addWidget(self.create_compression_info_label(), 2, 2, 1, 2)
         grid.addWidget(self.create_compression_slider(), 3, 2, 1, 2)
         grid.addWidget(self.create_compression_label(), 4, 2, 1, 2)
@@ -62,9 +63,10 @@ class create_widgets(QWidget):
         grid.addWidget(self.cb_encrypt_files(), 6, 2, 1, 2)
         grid.addWidget(self.entry_encryption_password(), 7, 2, 1, 2)
         grid.addWidget(self.backup_location_selector(), 8, 2, 1, 2)
-        grid.addWidget(self.save_profile_button(), 9, 2, 1, 1)
-        grid.addWidget(self.load_profile_button(), 9, 3, 1, 1)
-        grid.addWidget(self.create_backup_button(), 10, 2, 1, 2)
+        grid.addWidget(self.cb_shutdown_after(), 9, 2, 1, 2)
+        grid.addWidget(self.save_profile_button(), 10, 2, 1, 1)
+        grid.addWidget(self.load_profile_button(), 10, 3, 1, 1)
+        grid.addWidget(self.create_backup_button(), 11, 2, 1, 2)
 
 
     """Select folders to be backed up"""############################################
@@ -94,7 +96,7 @@ class create_widgets(QWidget):
         file_button.clicked.connect(backup_file_dialog)
         return file_button
 
-    def create_backup_file_list(self):
+    def backup_file_list(self):
         """creates a list which shows the selected directories"""
         self.backup_list = QListWidget()
         return self.backup_list
@@ -258,6 +260,24 @@ class create_widgets(QWidget):
         self.generator_location_chooser = QPushButton("Select location of script")
         self.generator_location_chooser.clicked.connect(file_dialog)
         return self.generator_location_chooser
+
+
+    """For additional options"""###################################################
+    def cb_shutdown_after(self):
+        """Checkbox: shutdown after completition"""
+        def update_cfg_encrypt():
+            self.show_message("This function uses sudo and might interrupt other crucial processes. Please proceed with care")
+            self.backup_config["shutdown_when_finished"] = shutdown_when_finished.isChecked()
+        shutdown_when_finished = QCheckBox("Shutdown after having finished")
+        shutdown_when_finished.toggled.connect(update_cfg_encrypt)
+        return shutdown_when_finished
+
+
+
+
+
+
+
 
 
     """Save and load profiles"""#####################################################
