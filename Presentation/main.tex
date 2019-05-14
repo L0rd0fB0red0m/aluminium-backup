@@ -1,0 +1,132 @@
+\documentclass{beamer}
+
+\usepackage[french]{babel}
+\usepackage{hyperref}
+\usepackage{eurosym}
+\usepackage{graphicx}
+%\graphicspath{ {./images/} }
+\usepackage{pgfpages}
+\setbeameroption{hide notes} % Only slides
+%\setbeameroption{show only notes} % Only notes
+%\setbeameroption{show notes on second screen=right} % Both
+
+\usepackage{STYLE/THEME}
+
+\title{Aluminium Backup}
+\date{\today}
+\author{Rémy Moll, TSMP}
+\institute{DFG-Freiburg}
+\nonstopmode
+
+
+\begin{document}
+
+	\begin{frame}[plain,t]
+		\titlepage
+	\end{frame}
+
+	\begin{frame}% [plain,t]
+		\frametitle{Contenu :}
+		\tableofcontents
+	\end{frame}
+
+	\section{Idée}
+
+	\begin{frame}{Idée}
+	  \begin{itemize}
+			\item Inspiration
+			\begin{itemize}
+				\item Titanium Backup comme inspiration
+				\item initialement: script + interface
+			\end{itemize}
+			\item Objectifs
+			\begin{itemize}
+				\item Accès facile aux fichiers sauvegardés
+				\item Copie des programmes
+			\end{itemize}
+	  \end{itemize}
+	\end{frame}
+
+	\section{Réalisation}
+
+	\begin{frame}{Réalisation}{Structure}
+	  \begin{itemize}
+			\item Interface
+			\begin{itemize}
+			\item Une fenêtre universelle
+			\item Fenêtre de parametres
+			\item Fenêtre de progres
+			\end{itemize}
+			\item Moteur
+			\begin{itemize}
+				\item Deux modules : backup et restore
+				\item Un script executé en cronjob
+			\end{itemize}
+	  \end{itemize}
+	\end{frame}
+
+	\begin{frame}{Réalisation}{Déroulement}
+	  \begin{itemize}
+			\item Démarrage de \texttt{main.py}
+			\begin{itemize}
+				\item Lecture de la configuration
+				\item Création de la fenêtre
+				\item Création des "listeners"
+			\end{itemize}
+			\item Chargement de l'interface
+			\begin{itemize}
+				\item Création des widgets
+			\end{itemize}
+			\item Lors de l'event 'START'
+			\begin{enumerate}
+				\item Fin du UI
+				\item Sauvegarde des parametres
+				\item Création de l'affiche de progrès
+				\item Fichiers se font copier
+				\item Signal de fin
+			\end{enumerate}
+	  \end{itemize}
+	\end{frame}
+
+	\section{Difficultés}
+
+	\begin{frame}{Difficultés rencontrées}{(et résolues)}
+	  \begin{itemize}
+			\item Interférence entre Qt et Threading
+			\item OS et Threading
+
+	  \end{itemize}
+	\end{frame}
+
+	\section{Problèmes}
+
+	\begin{frame}{Problèmes / Bugs}{"No, they're \textit{features}!"}
+		\begin{itemize}
+			\item Appliquer tous les parametres de manière efficace
+			\begin{itemize}
+				\item Compression et chiffrement
+				\item Création de la fenêtre
+			\end{itemize}
+			\item Symlinks
+			\begin{itemize}
+				\item Estimation de la taille
+				\item Mauvaise location
+			\end{itemize}
+			\item Taille des fichiers
+			\item Redondance du code
+		\end{itemize}
+	\end{frame}
+
+	\section{Site}
+	\begin{frame}{Site}{Fonctionnement}
+		\begin{itemize}
+			\item Destination et langue par des parametres GET
+			\item Chargement d'une base de données
+			\item Header et footer statiques
+			\item Sanitisation des entrées: erreur 404 et protection d'injections SQL
+		\end{itemize}
+	\end{frame}
+
+
+
+\end{document}

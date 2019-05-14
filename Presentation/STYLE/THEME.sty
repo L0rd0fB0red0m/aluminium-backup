@@ -1,0 +1,107 @@
+\ProvidesPackage{SCOLAIRE}[2018]
+
+\definecolor{accent_color}{RGB}{23,175,163}
+\definecolor{Grau_BG}{RGB}{229,234,254}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Outer theme
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\useoutertheme[width=.15\paperwidth]{sidebar}
+\setlength{\beamer@headheight}{.165\paperheight}
+\pgfdeclareimage[width=.06\paperwidth]{icon.ico}{STYLE/icon.ico}
+\pgfdeclareimage[width=.06\paperwidth]{main-logo}{STYLE/icon.ico}
+\pgfdeclareimage[height=\beamer@headheight]{small-corner}{STYLE/small-corner}
+\setbeamertemplate{sidebar left}{%
+\vskip7pt
+\insertverticalnavigation{\beamer@sidebarwidth}%
+}
+
+\setbeamertemplate{footline}[text line]{%
+\insertshortauthor\strut\hfill\insertshorttitle\hfill\insertshortdate\hspace{1em}\insertframenumber/\inserttotalframenumber}
+
+\addtobeamertemplate{frametitle}{}{%
+\begin{pgfpicture}
+\pgf@relevantforpicturesizefalse
+\pgftransformxshift{-\Gm@lmargin}
+\pgftransformyshift{\beamer@headheight+18pt}
+\pgftext[at=\pgfpoint{\paperwidth}{-\beamer@headheight},right,base]{\pgfuseimage{small-corner}}
+\pgfpathmoveto{\pgfpoint{.15\paperwidth}{0pt}}
+\pgfpathlineto{\pgfpoint{.15\paperwidth}{-\beamer@headheight}}
+\pgfsetlinewidth{3.5pt}
+\pgfsetinnerlinewidth{1pt}
+\pgfsetinnerstrokecolor{accent_color}
+\pgfsetcolor{white}
+\pgfusepath{stroke}
+\pgfpathmoveto{\pgfpoint{.15\paperwidth}{-.23\paperheight}}
+\pgfpathlineto{\pgfpoint{.15\paperwidth}{-.97\paperheight}}
+\pgfsetlinewidth{1pt}
+\pgfsetinnerlinewidth{0pt}
+\pgfsetcolor{accent_color}
+\pgfusepath{stroke}
+\pgftext[at=\pgfpoint{.075\paperwidth}{-.97\paperheight},center,base]{\pgfuseimage{icon.ico}}
+\end{pgfpicture}%
+\vskip-25pt%
+}
+
+\addtobeamertemplate{title page}{%
+\usebeamertemplate{title background}%
+\vskip .2\paperheight%
+}
+{}
+
+\newcommand\DoPurpleBackground{%
+\pgfpathmoveto{\pgfpointorigin}
+\pgfpathrectanglecorners{\pgfpoint{0pt}{0pt}}{\pgfpoint{\paperwidth}{-\paperheight}}
+\pgfsetfillcolor{Grau_BG}
+\pgfusepath{fill}
+}
+
+\setbeamertemplate{title background}{%
+\begin{pgfpicture}
+\pgf@relevantforpicturesizefalse
+\pgftransformxshift{-\Gm@lmargin}
+\pgftransformyshift{5.5pt}
+\pgfusepath{fill}
+\DoPurpleBackground
+
+% Logo
+\pgftext[at=\pgfpoint{.009\paperwidth}{-.99\paperheight},left,base]{\pgfuseimage{main-logo}}
+
+\end{pgfpicture}%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Inner Theme
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\useinnertheme{rectangles}
+\setbeamertemplate{navigation symbols}{}
+
+\setlength{\leftmargini}{.5em}
+\setlength{\leftmarginii}{1.0em}
+\setlength{\leftmarginiii}{1.5em}
+\setlength{\leftmarginiv}{2.0em}
+\setlength{\leftmarginv}{2.5em}
+\setlength{\leftmarginvi}{3.0em}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Colours
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usecolortheme[named=accent_color]{structure}
+\usecolortheme{rose}
+\setbeamercolor{title page}{fg=black}
+\setbeamercolor{logo}{bg=accent_color}
+\setbeamercolor{frametitle}{fg=accent_color,bg=Grau_BG}
+\setbeamercolor{section in sidebar}{fg=accent_color}
+\setbeamerfont{section in sidebar}{series=\bfseries}
+\setbeamercolor{block title}{bg=Grau_BG,fg=Grau_BG}
+\setbeamercolor{block body}{bg=accent_color!15!white}
+
+\newcommand\ThankYouFrame{
+\begin{frame}[plain,t]
+\begin{pgfpicture}
+\pgf@relevantforpicturesizefalse
+\pgftransformxshift{-\Gm@lmargin}
+\pgftransformyshift{5.5pt}
+\DoPurpleBackground
+\end{pgfpicture}
+\end{frame}
+}

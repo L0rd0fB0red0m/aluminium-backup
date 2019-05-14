@@ -142,7 +142,7 @@ class main_window(QMainWindow):
 
 
 def create_main_window():
-    """Opens the Framework window + exit listeners"""
+    """opens the Framework window + exit listeners"""
     main_app = QApplication(sys.argv)
     main_win = main_window()
     main_win.show()
