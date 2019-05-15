@@ -31,7 +31,6 @@
 	\end{frame}
 
 	\section{Idée}
-
 	\begin{frame}{Idée}
 	  \begin{itemize}
 			\item Inspiration
@@ -48,12 +47,14 @@
 	\end{frame}
 
 	\section{Réalisation}
-
 	\begin{frame}{Réalisation}{Structure}
 	  \begin{itemize}
 			\item Interface
 			\begin{itemize}
 			\item Une fenêtre universelle
+			\begin{itemize}
+				\item Deux modules : backup et restore
+			\end{itemize}
 			\item Fenêtre de parametres
 			\item Fenêtre de progres
 			\end{itemize}
@@ -79,9 +80,11 @@
 			\end{itemize}
 			\item Lors de l'event 'START'
 			\begin{enumerate}
-				\item Fin du UI
-				\item Sauvegarde des parametres
+				\item Fermeture de l'interface
+				\item Lecture des parametres
 				\item Création de l'affiche de progrès
+				\item Sauvegarde des parametres
+				\item Application des parametres
 				\item Fichiers se font copier
 				\item Signal de fin
 			\end{enumerate}
@@ -89,23 +92,20 @@
 	\end{frame}
 
 	\section{Difficultés}
-
 	\begin{frame}{Difficultés rencontrées}{(et résolues)}
 	  \begin{itemize}
 			\item Interférence entre Qt et Threading
 			\item OS et Threading
-
+			\item Cumulation de parametres
 	  \end{itemize}
 	\end{frame}
 
 	\section{Problèmes}
-
-	\begin{frame}{Problèmes / Bugs}{"No, they're \textit{features}!"}
+	\begin{frame}{Problèmes / Bugs}{"They're not bugs, they're \textit{features}!"}
 		\begin{itemize}
 			\item Appliquer tous les parametres de manière efficace
 			\begin{itemize}
 				\item Compression et chiffrement
-				\item Création de la fenêtre
 			\end{itemize}
 			\item Symlinks
 			\begin{itemize}
@@ -114,6 +114,15 @@
 			\end{itemize}
 			\item Taille des fichiers
 			\item Redondance du code
+		\end{itemize}
+	\end{frame}
+
+	\section{Améliorations}
+	\begin{frame}{Améliorations envisageables}
+		\begin{itemize}
+			\item Compression "intelligente"
+			\item Compatibilité Windows
+			\item Sauvegardes incrémentielles
 		\end{itemize}
 	\end{frame}
 

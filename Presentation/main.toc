@@ -1,0 +1,7 @@
+\babel@toc {french}{}
+\beamer@sectionintoc {1}{Id\IeC {\'e}e}{3}{0}{1}
+\beamer@sectionintoc {2}{R\IeC {\'e}alisation}{4}{0}{2}
+\beamer@sectionintoc {3}{Difficult\IeC {\'e}s}{6}{0}{3}
+\beamer@sectionintoc {4}{Probl\IeC {\`e}mes}{7}{0}{4}
+\beamer@sectionintoc {5}{Am\IeC {\'e}liorations}{8}{0}{5}
+\beamer@sectionintoc {6}{Site}{9}{0}{6}
