@@ -31,6 +31,7 @@ class create_widgets(QWidget):
             "file_list_generator" : "",
             "keep_metadata" : False,
             "shutdown_when_finished": False,
+            "use_incremential": False,
         }
         self.input_size = [0,"B"]
         self.approx_output_size = [0,"B"]
@@ -54,6 +55,7 @@ class create_widgets(QWidget):
         grid.addWidget(self.dd_file_larger(), 10, 1)
         grid.addWidget(self.cb_file_smaller(), 11, 0)
         grid.addWidget(self.dd_file_smaller(), 11, 1)
+        grid.addWidget(self.cb_incremential(), 12, 0, 1, 2)
         #2nd row:
         grid.addWidget(self.button_select_file_list_generator(), 1, 2, 1, 2)
         grid.addWidget(self.create_compression_info_label(), 2, 2, 1, 2)
@@ -66,7 +68,7 @@ class create_widgets(QWidget):
         grid.addWidget(self.cb_shutdown_after(), 9, 2, 1, 2)
         grid.addWidget(self.save_profile_button(), 10, 2, 1, 1)
         grid.addWidget(self.load_profile_button(), 10, 3, 1, 1)
-        grid.addWidget(self.create_backup_button(), 11, 2, 1, 2)
+        grid.addWidget(self.create_backup_button(), 11, 2, 2, 2)
 
 
     """Select folders to be backed up"""############################################
@@ -217,6 +219,13 @@ class create_widgets(QWidget):
         check_hidden.toggled.connect(update_hidden_cfg)
         return check_hidden
 
+    """Select if to use an incremential backup-method"""############################
+    def cb_incremential(self):
+        def update_cfg():
+            self.backup_config["use_incremential"] = cb_incremential.isChecked()
+        cb_incremential = QCheckBox('Perform incremential Backup', self)
+        cb_incremential.toggled.connect(update_cfg)
+        return cb_incremential
 
     """Select if metadata should be kept"""#########################################
     def cb_keep_metadata(self):

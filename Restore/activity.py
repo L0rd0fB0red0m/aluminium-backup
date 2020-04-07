@@ -1,5 +1,5 @@
 from threading import Thread                                                    #for multithreaded copying
-import zipfile                                                                   #for compression
+import zipfile                                                                  #for compression
 import shutil                                                                   #for copying
 import os                                                                       #for creating directories
 import pyAesCrypt                                                               #for encryption
@@ -13,20 +13,22 @@ from PyQt5.QtCore import *
 class Activity(QThread):
     """The whole backup-process: a Thread launched through status"""
 
-    update = pyqtSignal("PyQt_PyObject","PyQt_PyObject")
+    update_percentage = pyqtSignal("PyQt_PyObject")
+    update_detail = pyqtSignal("PyQt_PyObject")
     elapsed = pyqtSignal("PyQt_PyObject")
     finished = pyqtSignal("PyQt_PyObject")
 
-    def __init__(self):
+    def __init__(self,configuration):
         super().__init__()
+        self.restore_config = configuration
 
 
-    def run(self,configuration):
+    def run(self):
         """starts the actual restore process
         Args: * configuration:dict -> contains all the parameters that have to be respected while copying files"""
         self.start_time = datetime.datetime.now()
         self.activity_threads = {}
-        self.restore_config = configuration
+
         self.progress = 0
         self.unsuccesfull_log = []
         self.location_of_backup = self.restore_config["backup_location"]
@@ -37,7 +39,8 @@ class Activity(QThread):
                 if filename != ".backup_config.AlB":
                     self.original_location.append(os.path.join(dirpath,filename).replace(self.location_of_backup,""))
                     #removes the prefix of the backup folder
-
+        if psutil.WINDOWS:
+            self.original_location = [x[1:2] + ":" + x[2:] for x in self.original_location]
         self.max_progress = len(self.original_location)
         self.pause = False
         self.transfer_files(self.restore_config["compression_method"])
@@ -48,14 +51,17 @@ class Activity(QThread):
         Args: * compression_method:int -> 0 for copyied files, 1 and 2 for compression"""
         cores = (psutil.cpu_count())*4
         #4 software threads per hardware thread (I read somewhere that a modern CPU should handle  16)
-        if compression_method == 2 or compression_method == 1:
-            for work_thread in range(cores):
-                self.activity_threads["T_"+str(work_thread)] = Thread(target = self.decompress_1)
-        else:
-            for work_thread in range(cores):
-                self.activity_threads["T_"+str(work_thread)] = Thread(target = self.decompress_0)
+        for work_thread in range(cores):
+            if compression_method == 2 or compression_method == 1:
+                temp = Thread(target = self.decompress_1)
+            else:
+                temp = Thread(target = self.decompress_0)
+            temp.deamon = True
+            self.activity_threads["T_"+str(work_thread)] = temp
+
         for i in self.activity_threads:
             self.activity_threads[i].start()
+
         elapsed_thread = Thread(target=self.update_elapsed)
         elapsed_thread.start()
 
@@ -85,6 +91,8 @@ class Activity(QThread):
         Args: * dest:str -> where the file will be restored to"""
         dir_name, file_name = os.path.split(dest)
         zipfile_name = self.location_of_backup + dest
+        if psutil.WINDOWS:
+            zipfile_name = self.location_of_backup + "/" + dest.replace(":","")
         try:
             if self.restore_config["decrypt_files"]:
                 self.copy_single(dest)
@@ -106,8 +114,10 @@ class Activity(QThread):
         """copies one given file respecting the params from the configuration
         Args: * dest:str -> where the file will be restored to"""
         dir_name, _ = os.path.split(dest)
-        backed_up_location = self.location_of_backup + dest
 
+        backed_up_location = self.location_of_backup + dest
+        if psutil.WINDOWS:
+            backed_up_location = self.location_of_backup + "/" + dest.replace(":","")
         try:
             try:
                 if not os.path.exists(dir_name) and self.restore_config["create_new_dirs"]:
@@ -123,6 +133,7 @@ class Activity(QThread):
                 elif self.restore_config["keep_metadata"]:
                     shutil.copy2(backed_up_location, dest)
                 else:
+                    print(backed_up_location, dest)
                     shutil.copy(backed_up_location, dest)
             else:
                 self.unsuccesfull_log.append(dest + " (file exists)")
@@ -135,7 +146,8 @@ class Activity(QThread):
         Args: * copied_file:str -> name of file that was jsut copied"""
         self.progress += 1
         percentage = self.progress / self.max_progress
-        self.update.emit(percentage,copied_file)
+        self.update_percentage.emit(percentage)
+        self.update_detail.emit(copied_file)
         if self.progress == self.max_progress:
             self.finished.emit(self.unsuccesfull_log)
 

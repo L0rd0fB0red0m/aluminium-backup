@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import *
 import json
-from crontab import CronTab
+#from crontab import CronTab
 
 class showSettings(QWidget):
     """Creates settings-window as a standalone entity"""
@@ -14,8 +14,8 @@ class showSettings(QWidget):
         grid.addWidget(QLabel("Default window:"),0,0)
         grid.addWidget(self.dd_default_window(),1,0)
         grid.addWidget(self.cb_dark_mode(),2,0)
-        grid.addWidget(self.cb_run_periodically(),3,0)
-        grid.addWidget(self.dd_time_period(),4,0)
+        #grid.addWidget(self.cb_run_periodically(),3,0)
+        #grid.addWidget(self.dd_time_period(),4,0)
         grid.addWidget(self.button_select_config(),5,0)
         grid.addWidget(self.save_button(),6,0)
 

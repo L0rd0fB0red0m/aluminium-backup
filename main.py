@@ -14,7 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
-
+# Pyinstaller pyinstaller -F -w main.py --uac-admin --add-data=".AlB\icon.ico;.Alb" --add-data=".AlB\aluminium.jpg;.AlB"
 import sys                                                                      #for quitting the programm
 import json                                                                     #for parsing and reading config. files
 import subprocess                                                               #for displaying help (does not work on every distro)
@@ -33,7 +33,6 @@ from status import showStatus as showStatus
 
 from settings import showSettings as showSettings
 #for settings
-
 
 class main_window(QMainWindow):
     """framework, either shows B or R + Menu bars"""
@@ -54,12 +53,12 @@ class main_window(QMainWindow):
         settings_button = QAction("Settings",self)
         self.menu_bar.addAction(settings_button)
         settings_button.triggered.connect(self.open_settings)
-        help_button = QAction("Help",self)
-        self.menu_bar.addAction(help_button)
-        help_button.triggered.connect(lambda: subprocess.Popen(['xdg-open', "https://github.com/L0rd0fB0red0m/aluminium-backup/blob/master/README.md"]))
-        info_button = QAction("Info",self)
-        self.menu_bar.addAction(info_button)
-        info_button.triggered.connect(lambda: subprocess.Popen(['xdg-open', "https://dfglfa.net/Informatique/bac2019/remy"]))
+        #help_button = QAction("Help",self)
+        #self.menu_bar.addAction(help_button)
+        #help_button.triggered.connect(lambda: subprocess.Popen(['xdg-open', "https://github.com/L0rd0fB0red0m/aluminium-backup/blob/master/README.md"]))
+        #info_button = QAction("Info",self)
+        #self.menu_bar.addAction(info_button)
+        #info_button.triggered.connect(lambda: subprocess.Popen(['xdg-open', "https://dfglfa.net/Informatique/bac2019/remy"]))
 
 
 
@@ -124,6 +123,7 @@ class main_window(QMainWindow):
         self.dialog = confirmWindow(self.ui_config["approx_output_size"])
         self.dialog.show()
         self.dialog.buttonClicked.connect(user_decision)
+        retval = self.dialog.exec_()
 
 
     def load_config(self):
@@ -146,8 +146,8 @@ def create_main_window():
     main_app = QApplication(sys.argv)
     main_win = main_window()
     main_win.show()
-    sys.exit(main_app.exec_())
-
+    #sys.exit(main_app.exec_())
+    main_app.exec()
 
 
 class confirmWindow(QMessageBox):
